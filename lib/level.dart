@@ -1,33 +1,31 @@
 import 'geom.dart';
+import 'mesh.dart';
 
-/// Solved when both walls reach this. Tune against real play in M0 — too tight
-/// is frustrating, too loose is trivial.
+/// Solved when both walls reach this.
 const double kSolveThreshold = 0.92;
 
+/// One rigid part of a sculpture.
+///
+/// Still called Box because the 36 generated levels are boxes and
+/// `levels.g.dart` constructs them by that name — but a piece is now any
+/// mesh. Use [Box.form] for lathed and extruded shapes.
 class Box {
-  const Box({required this.center, required this.half, this.hinged = false});
-  final V3 center;
-  final V3 half;
+  const Box({required this.center, required this.half, this.hinged = false})
+      : shape = null;
 
-  /// Hinged boxes swing about the world X axis through the origin.
+  /// An arbitrary mesh piece. Pre-positioned in its own coordinates.
+  const Box.form(Mesh this.shape, {this.hinged = false})
+      : center = const V3(0, 0, 0),
+        half = const V3(0, 0, 0);
+
+  final V3 center, half;
+
+  /// Hinged pieces swing about the world X axis through the origin.
   final bool hinged;
 
-  static const _signs = [
-    [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], //
-    [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1],
-  ];
+  final Mesh? shape;
 
-  /// Faces as corner indices, wound counter-clockwise seen from outside.
-  static const faces = [
-    [0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], //
-    [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3],
-  ];
-
-  List<V3> corners() => [
-        for (final s in _signs)
-          V3(center.x + s[0] * half.x, center.y + s[1] * half.y,
-              center.z + s[2] * half.z),
-      ];
+  Mesh get mesh => shape ?? Mesh.box(center, half);
 }
 
 class Pose {
@@ -54,19 +52,25 @@ class Level {
   bool get hasHinge => boxes.any((b) => b.hinged);
 }
 
-/// One box's corners in world space at [p].
-List<List<V3>> worldCorners(Level lv, Pose p) => [
+/// Each piece's mesh in world space at [p].
+List<Mesh> worldMeshes(Level lv, Pose p) => [
       for (final b in lv.boxes)
-        [
-          for (final c in b.corners())
-            rotateYawPitch(b.hinged ? rotateX(c, p.hinge) : c, p.yaw, p.pitch),
-        ],
+        b.mesh.map((v) =>
+            rotateYawPitch(b.hinged ? rotateX(v, p.hinge) : v, p.yaw, p.pitch)),
     ];
 
-/// Per-box shadow hulls on each wall. Overlaps are resolved by the raster
-/// union in [rasterize], so these stay independent.
-List<List<V2>> shadows(List<List<V3>> world, V2 Function(V3) project) =>
-    [for (final cs in world) convexHull([for (final c in cs) project(c)])];
+/// Project every piece onto a wall. Overlaps resolve in the raster union, so
+/// pieces stay independent.
+List<Mesh2> shadowMeshes(List<Mesh> world, V2 Function(V3) project) =>
+    [for (final m in world) Mesh2([for (final v in m.verts) project(v)], m.tris)];
+
+Mask maskOfShadows(List<Mesh2> shadows, int n) {
+  final g = Mask(n);
+  for (final s in shadows) {
+    fillTriangles(g, s.v, s.t);
+  }
+  return g;
+}
 
 class Score {
   const Score(this.a, this.b);
@@ -78,34 +82,32 @@ class LevelRuntime {
   /// [res] is the scoring grid. 64 for play; the generator drops to 32, where
   /// it is 4x cheaper and still far finer than the accept/reject thresholds.
   LevelRuntime(this.level, {this.res = 64})
-      : _targetA = rasterize(
-            shadows(worldCorners(level, level.solution), toWallA),
-            n: res),
-        _targetB = rasterize(
-            shadows(worldCorners(level, level.solution), toWallB),
-            n: res);
+      : _targetA = maskOfShadows(
+            shadowMeshes(worldMeshes(level, level.solution), toWallA), res),
+        _targetB = maskOfShadows(
+            shadowMeshes(worldMeshes(level, level.solution), toWallB), res);
 
   final Level level;
   final int res;
   final Mask _targetA, _targetB;
 
-  List<List<V2>> targetHullsA() =>
-      shadows(worldCorners(level, level.solution), toWallA);
-  List<List<V2>> targetHullsB() =>
-      shadows(worldCorners(level, level.solution), toWallB);
+  List<Mesh2> targetShadowsA() =>
+      shadowMeshes(worldMeshes(level, level.solution), toWallA);
+  List<Mesh2> targetShadowsB() =>
+      shadowMeshes(worldMeshes(level, level.solution), toWallB);
 
   Score score(Pose p) {
-    final w = worldCorners(level, p);
+    final w = worldMeshes(level, p);
     return Score(
-      iou(rasterize(shadows(w, toWallA), n: res), _targetA),
-      iou(rasterize(shadows(w, toWallB), n: res), _targetB),
+      iou(maskOfShadows(shadowMeshes(w, toWallA), res), _targetA),
+      iou(maskOfShadows(shadowMeshes(w, toWallB), res), _targetB),
     );
   }
 }
 
-/// Three puzzles, one new idea each: rotation, harder rotation, then the hinge.
-/// That third one is the gate — if it isn't more *interesting* than the first,
-/// and not merely fiddlier, the project stops. See status.md.
+/// The three M0 gate puzzles, one new idea each: rotation, harder rotation,
+/// then the hinge. Kept because the test suite and `tool/probe.dart` measure
+/// against them — the Hinge is the only level known to be good.
 const levels = <Level>[
   Level(
     name: '1 · Tee',

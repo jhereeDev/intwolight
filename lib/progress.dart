@@ -1,14 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'levels.g.dart';
+import 'forms.dart';
 
 /// Chapter boundaries, derived from how many joints the sculptures have.
 /// Read off levels.g.dart rather than assumed: 1–12 have no hinge, 13–27 have
 /// one, 28–36 mix one and two. Note that makes chapter 3 *mixed*, not "two
 /// hinges" as the early notes claimed.
-const chapterStarts = [0, 12, 27];
+const chapterStarts = [0, 12, 27, 36];
 
-const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS'];
+const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS'];
 
 int chapterOf(int levelIndex) {
   for (var c = chapterStarts.length - 1; c >= 0; c--) {
@@ -19,7 +19,7 @@ int chapterOf(int levelIndex) {
 
 int chapterEnd(int c) => c + 1 < chapterStarts.length
     ? chapterStarts[c + 1]
-    : generatedLevels.length;
+    : allLevels.length;
 
 /// Stars are earned on **precision, not speed** — how tightly both shadows
 /// matched, scored on the weaker of the two walls. A timer would turn a

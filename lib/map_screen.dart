@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import 'levels.g.dart';
+import 'forms.dart';
 import 'progress.dart';
 
 const _bg = Color(0xFF08080A);
@@ -33,10 +33,10 @@ class MapLayout {
       _topPad + c * _headerH + chapterStarts[c] * _spacing + _headerH * 0.35;
 
   double get contentHeight =>
-      nodeAt(generatedLevels.length - 1).dy + _botPad;
+      nodeAt(allLevels.length - 1).dy + _botPad;
 
   int? hit(Offset p) {
-    for (var i = 0; i < generatedLevels.length; i++) {
+    for (var i = 0; i < allLevels.length; i++) {
       if ((nodeAt(i) - p).distance <= 38) return i;
     }
     return null;
@@ -71,10 +71,10 @@ class MapScreenState extends State<MapScreen> {
   }
 
   int get _current {
-    for (var i = 0; i < generatedLevels.length; i++) {
+    for (var i = 0; i < allLevels.length; i++) {
       if (!widget.progress.solved(i)) return i;
     }
-    return generatedLevels.length - 1;
+    return allLevels.length - 1;
   }
 
   void _centreOnCurrent() {
@@ -144,7 +144,7 @@ class MapScreenState extends State<MapScreen> {
                     const SizedBox(width: 5),
                     Text(
                       '${widget.progress.totalStars}'
-                      ' / ${generatedLevels.length * 3}',
+                      ' / ${allLevels.length * 3}',
                       style: const TextStyle(
                           fontSize: 12, letterSpacing: 2, color: Colors.white38),
                     ),
@@ -157,6 +157,19 @@ class MapScreenState extends State<MapScreen> {
       ),
     );
   }
+}
+
+/// Repeating 'I' gave "CHAPTER IIII" the moment a fourth chapter existed.
+String _roman(int n) {
+  const pairs = [(10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')];
+  var out = '', left = n;
+  for (final (value, sym) in pairs) {
+    while (left >= value) {
+      out += sym;
+      left -= value;
+    }
+  }
+  return out;
 }
 
 class _MapPainter extends CustomPainter {
@@ -179,7 +192,7 @@ class _MapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.1
       ..color = Colors.white.withValues(alpha: 0.07);
-    for (var i = 0; i < generatedLevels.length - 1; i++) {
+    for (var i = 0; i < allLevels.length - 1; i++) {
       if (chapterOf(i) != chapterOf(i + 1)) continue;
       final a = layout.nodeAt(i), b = layout.nodeAt(i + 1);
       final path = Path()
@@ -191,7 +204,7 @@ class _MapPainter extends CustomPainter {
     for (var c = 0; c < chapterStarts.length; c++) {
       _chapterHeader(canvas, size, c);
     }
-    for (var i = 0; i < generatedLevels.length; i++) {
+    for (var i = 0; i < allLevels.length; i++) {
       _room(canvas, i);
     }
   }
@@ -204,7 +217,7 @@ class _MapPainter extends CustomPainter {
 
     _text(
       canvas,
-      'CHAPTER ${'I' * (c + 1)}',
+      'CHAPTER ${_roman(c + 1)}',
       Offset(size.width / 2, y - 16),
       TextStyle(
           fontSize: 10,

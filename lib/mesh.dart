@@ -2,6 +2,13 @@ import 'dart:math' as math;
 
 import 'geom.dart';
 
+/// A mesh already projected onto a wall.
+class Mesh2 {
+  const Mesh2(this.v, this.t);
+  final List<V2> v;
+  final List<int> t;
+}
+
 /// An arbitrary triangle mesh.
 ///
 /// This replaces the box-only model. The silhouette of a box is its convex

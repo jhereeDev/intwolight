@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'geom.dart';
 import 'level.dart';
+import 'mesh.dart';
 
 /// The corner. One coherent room instead of three disconnected panels.
 ///
@@ -64,9 +65,50 @@ Path _quad(List<V3> pts, Size s, double k, Offset o) {
   return p..close();
 }
 
-/// Wall-local hull -> world point, per wall.
+/// Wall-local point -> world point, per wall.
 V3 onWallA(V2 h) => V3(-kWall, h.y, h.x);
 V3 onWallB(V2 h) => V3(h.x, h.y, -kWall);
+
+/// Build one filled path from a projected mesh.
+///
+/// Every triangle is wound the same way before being added. A closed mesh
+/// projects its front and back faces with opposite windings, and under
+/// non-zero fill those cancel — the silhouette would come out with holes
+/// exactly where the shape is thickest.
+Path shadowPath(Mesh2 m, V3 Function(V2) toWorld, Size s, double k, Offset o) {
+  final path = Path()..fillType = PathFillType.nonZero;
+  for (var i = 0; i + 2 < m.t.length; i += 3) {
+    var a = m.v[m.t[i]], b = m.v[m.t[i + 1]], c = m.v[m.t[i + 2]];
+    final area = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    if (area == 0) continue;
+    if (area < 0) {
+      final tmp = b;
+      b = c;
+      c = tmp;
+    }
+    final pa = project(toWorld(a), s, k, o);
+    final pb = project(toWorld(b), s, k, o);
+    final pc = project(toWorld(c), s, k, o);
+    path
+      ..moveTo(pa.dx, pa.dy)
+      ..lineTo(pb.dx, pb.dy)
+      ..lineTo(pc.dx, pc.dy)
+      ..close();
+  }
+  return path;
+}
+
+/// True outline of a silhouette, for the target ghost. Union is expensive, so
+/// callers cache this per level rather than rebuilding it per frame.
+Path unionOutline(List<Mesh2> ms, V3 Function(V2) toWorld, Size s, double k,
+    Offset o) {
+  var acc = Path();
+  for (final m in ms) {
+    acc = Path.combine(
+        PathOperation.union, acc, shadowPath(m, toWorld, s, k, o));
+  }
+  return acc;
+}
 
 class CornerScenePainter extends CustomPainter {
   CornerScenePainter({
@@ -81,8 +123,12 @@ class CornerScenePainter extends CustomPainter {
     required this.motes,
   });
 
-  final List<List<V3>> world;
-  final List<List<V2>> targetsA, targetsB, castA, castB;
+  final List<Mesh> world;
+  final List<Mesh2> castA, castB;
+
+  /// Pre-unioned outlines in *wall-local* space, rebuilt only when the level
+  /// or the viewport changes.
+  final List<Mesh2> targetsA, targetsB;
   final bool hitA, hitB;
 
   /// 0 -> unsolved, 1 -> fully solved. Drives the warm bloom.
@@ -159,36 +205,34 @@ class CornerScenePainter extends CustomPainter {
     canvas.drawPath(wallB, seam);
 
     // ---- targets, then the shadows themselves -----------------------------
-    _drawHulls(canvas, size, k, o, targetsA, onWallA,
+    for (final (ms, map, hit) in [
+      (targetsA, onWallA, hitA),
+      (targetsB, onWallB, hitB),
+    ]) {
+      final outline = unionOutline(ms, map, size, k, o);
+      canvas.drawPath(
+        outline,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.3
-          ..color = (hitA ? _amber : Colors.white).withValues(alpha: 0.30));
-    _drawHulls(canvas, size, k, o, targetsB, onWallB,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.3
-          ..color = (hitB ? _amber : Colors.white).withValues(alpha: 0.30));
+          ..color = (hit ? _amber : Colors.white).withValues(alpha: 0.34),
+      );
+    }
 
     // A shadow is dark on a lit wall — not a bright shape on a dark one.
     // It warms toward amber only as the pair locks.
-    for (final (hulls, map, hit) in [
+    for (final (ms, map, hit) in [
       (castA, onWallA, hitA),
       (castB, onWallB, hitB),
     ]) {
-      _drawHulls(
-        canvas,
-        size,
-        k,
-        o,
-        hulls,
-        map,
-        Paint()
-          ..color = hit
-              ? _amber.withValues(alpha: 0.42)
-              : const Color(0xFF05050A).withValues(alpha: 0.78)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2),
-      );
+      final paint = Paint()
+        ..color = hit
+            ? _amber.withValues(alpha: 0.42)
+            : const Color(0xFF05050A).withValues(alpha: 0.78)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2);
+      for (final m in ms) {
+        canvas.drawPath(shadowPath(m, map, size, k, o), paint);
+      }
     }
 
     // ---- dust in the beam -------------------------------------------------
@@ -217,60 +261,56 @@ class CornerScenePainter extends CustomPainter {
     }
   }
 
-  void _drawHulls(Canvas c, Size s, double k, Offset o, List<List<V2>> hulls,
-      V3 Function(V2) map, Paint paint) {
-    for (final h in hulls) {
-      if (h.length < 3) continue;
-      final p = Path();
-      for (var i = 0; i < h.length; i++) {
-        final q = project(map(h[i]), s, k, o);
-        i == 0 ? p.moveTo(q.dx, q.dy) : p.lineTo(q.dx, q.dy);
-      }
-      c.drawPath(p..close(), paint);
-    }
-  }
-
   static const _view = V3(0.577, 0.577, 0.577);
 
+  /// Painter's algorithm over triangles. Exact enough for the small,
+  /// non-interpenetrating pieces these sculptures are built from; it would
+  /// need a depth buffer for anything that self-intersects.
   void _drawSolid(Canvas canvas, Size size, double k, Offset o) {
     final faces = <({double depth, Path path, double shade})>[];
-    for (final corners in world) {
-      for (final fc in Box.faces) {
-        final a = corners[fc[0]], b = corners[fc[1]], c = corners[fc[2]];
+    for (final m in world) {
+      for (var i = 0; i + 2 < m.tris.length; i += 3) {
+        final a = m.verts[m.tris[i]];
+        final b = m.verts[m.tris[i + 1]];
+        final c = m.verts[m.tris[i + 2]];
         final n = (b - a).cross(c - a);
         final lit = n.dot(_view);
-        if (lit <= 0) continue;
+        if (lit <= 0) continue; // back face
         final len = math.sqrt(n.dot(n));
         final shade = len == 0 ? 0.0 : (lit / len).clamp(0.0, 1.0);
 
-        final path = Path();
-        for (var i = 0; i < fc.length; i++) {
-          final p = project(corners[fc[i]], size, k, o);
-          i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
-        }
-        path.close();
+        final pa = project(a, size, k, o);
+        final pb = project(b, size, k, o);
+        final pc = project(c, size, k, o);
+        final path = Path()
+          ..moveTo(pa.dx, pa.dy)
+          ..lineTo(pb.dx, pb.dy)
+          ..lineTo(pc.dx, pc.dy)
+          ..close();
 
-        var d = 0.0;
-        for (final i in fc) {
-          d += corners[i].dot(_view);
-        }
-        faces.add((depth: d / fc.length, path: path, shade: shade));
+        faces.add((
+          depth: (a.dot(_view) + b.dot(_view) + c.dot(_view)) / 3,
+          path: path,
+          shade: shade,
+        ));
       }
     }
-    faces.sort((x, y) => x.depth.compareTo(y.depth));
+    faces.sort((x, y) => x.depth.compareTo(y.depth)); // far first
 
-    final edge = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
-      ..color = const Color(0xFF07070B);
     for (final fc in faces) {
+      final fill = Color.lerp(
+          _solidDark, Color.lerp(_solidLit, _warm, glow * 0.35)!, fc.shade)!;
+      // Stroke each triangle in its own fill colour: it closes the hairline
+      // seams antialiasing leaves between adjacent triangles, without drawing
+      // a visible wireframe over a curved surface.
+      canvas.drawPath(fc.path, Paint()..color = fill);
       canvas.drawPath(
         fc.path,
         Paint()
-          ..color = Color.lerp(
-              _solidDark, Color.lerp(_solidLit, _warm, glow * 0.35)!, fc.shade)!,
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.7
+          ..color = fill,
       );
-      canvas.drawPath(fc.path, edge);
     }
   }
 

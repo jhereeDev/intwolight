@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_two_lights/level.dart';
+import 'package:in_two_lights/forms.dart';
 import 'package:in_two_lights/levels.g.dart';
 import 'package:in_two_lights/progress.dart';
 
@@ -14,7 +15,7 @@ void main() {
         expect(chapterOf(i), c);
       }
     }
-    expect(covered, generatedLevels.length);
+    expect(covered, allLevels.length);
   });
 
   test('chapter boundaries actually track hinge count', () {
@@ -24,6 +25,8 @@ void main() {
       expect(generatedLevels[i].hasHinge, isFalse,
           reason: 'level ${i + 1} is in CHAPTER I but has a joint');
     }
+    // Only chapters I-III are generated; CHAPTER IV is hand-authored organic
+    // forms and is deliberately not bound by the hinge progression.
     for (var i = chapterStarts[1]; i < generatedLevels.length; i++) {
       expect(generatedLevels[i].hasHinge, isTrue,
           reason: 'level ${i + 1} is past CHAPTER I but has no joint');

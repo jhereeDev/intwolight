@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'geom.dart';
 import 'level.dart';
-import 'levels.g.dart';
+import 'forms.dart';
 import 'map_screen.dart';
 import 'progress.dart';
 import 'scene.dart';
@@ -61,7 +61,7 @@ class _PlayScreenState extends State<PlayScreen>
     with SingleTickerProviderStateMixin {
   late int _index = widget.index;
   Pose _pose = const Pose(0, 0, 0);
-  late LevelRuntime _rt = LevelRuntime(generatedLevels[widget.index]);
+  late LevelRuntime _rt = LevelRuntime(allLevels[widget.index]);
 
   /// Eases the whole scene between "cold" and "lit" so solving is a moment
   /// rather than a state flip.
@@ -93,8 +93,8 @@ class _PlayScreenState extends State<PlayScreen>
   }
 
   void _load(int i) => setState(() {
-        _index = i.clamp(0, generatedLevels.length - 1);
-        _rt = LevelRuntime(generatedLevels[_index]);
+        _index = i.clamp(0, allLevels.length - 1);
+        _rt = LevelRuntime(allLevels[_index]);
         _pose = const Pose(0, 0, 0);
         _wasSolved = false;
         _glow.value = 0;
@@ -121,8 +121,8 @@ class _PlayScreenState extends State<PlayScreen>
 
   @override
   Widget build(BuildContext context) {
-    final lv = generatedLevels[_index];
-    final world = worldCorners(lv, _pose);
+    final lv = allLevels[_index];
+    final world = worldMeshes(lv, _pose);
     final score = _rt.score(_pose);
     final g = Curves.easeOutCubic.transform(_glow.value);
 
@@ -145,10 +145,10 @@ class _PlayScreenState extends State<PlayScreen>
                   size: Size.infinite,
                   painter: CornerScenePainter(
                     world: world,
-                    targetsA: _rt.targetHullsA(),
-                    targetsB: _rt.targetHullsB(),
-                    castA: shadows(world, toWallA),
-                    castB: shadows(world, toWallB),
+                    targetsA: _rt.targetShadowsA(),
+                    targetsB: _rt.targetShadowsB(),
+                    castA: shadowMeshes(world, toWallA),
+                    castB: shadowMeshes(world, toWallB),
                     hitA: score.a >= kSolveThreshold,
                     hitB: score.b >= kSolveThreshold,
                     glow: g,
@@ -166,7 +166,7 @@ class _PlayScreenState extends State<PlayScreen>
 
             _Hud(
               index: _index,
-              total: generatedLevels.length,
+              total: allLevels.length,
               a: score.a,
               b: score.b,
               glow: g,
@@ -176,7 +176,7 @@ class _PlayScreenState extends State<PlayScreen>
                   ? starsForScore(math.min(score.a, score.b))
                   : 0,
               onBack: () => Navigator.of(context).pop(),
-              onNext: _index < generatedLevels.length - 1
+              onNext: _index < allLevels.length - 1
                   ? () => _load(_index + 1)
                   : null,
               onReset: () => _apply(const Pose(0, 0, 0)),
