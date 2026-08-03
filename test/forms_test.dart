@@ -14,6 +14,20 @@ void main() {
     }
   });
 
+  test('designed silhouettes land exactly at their pose', () {
+    // A silhouette level is authored in world space and pre-rotated by the
+    // inverse of its solution, so any drift in unrotateYawPitch shows up here
+    // as a target that is not the figure that was drawn.
+    for (final lv in silhouetteLevels) {
+      final rt = LevelRuntime(lv);
+      final at = rt.score(lv.solution);
+      expect(at.a, greaterThan(0.999), reason: '${lv.name} wall A');
+      expect(at.b, greaterThan(0.999), reason: '${lv.name} wall B');
+      expect(rt.score(const Pose(0, 0, 0)).solved, isFalse,
+          reason: '${lv.name} opens already solved');
+    }
+  });
+
   test('no form is a bare surface of revolution', () {
     // A lathe about Y has the same silhouette at every yaw, so yaw would carry
     // no information and half the controls would do nothing. Every form must

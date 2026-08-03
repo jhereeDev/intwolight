@@ -33,6 +33,18 @@ V3 rotateYawPitch(V3 v, double yaw, double pitch) {
   return V3(x1, v.y * cp - z1 * sp, v.y * sp + z1 * cp);
 }
 
+/// Undo [rotateYawPitch]. Lets a sculpture be authored in the pose the player
+/// will see it solved in, then pre-rotated backwards so the level opens
+/// scrambled — which is how a designed silhouette (a duck, a fish) can be the
+/// target when targets are derived from the solution pose.
+V3 unrotateYawPitch(V3 v, double yaw, double pitch) {
+  final cp = math.cos(pitch), sp = math.sin(pitch);
+  final y = v.y * cp + v.z * sp;
+  final z1 = -v.y * sp + v.z * cp;
+  final cy = math.cos(yaw), sy = math.sin(yaw);
+  return V3(v.x * cy - z1 * sy, y, v.x * sy + z1 * cy);
+}
+
 /// Rotation about the world X axis through the origin — the hinge.
 V3 rotateX(V3 v, double a) {
   final c = math.cos(a), s = math.sin(a);

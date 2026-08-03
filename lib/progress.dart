@@ -8,9 +8,9 @@ import 'forms.dart';
 /// Read off levels.g.dart rather than assumed: 1–12 have no hinge, 13–27 have
 /// one, 28–36 mix one and two. Note that makes chapter 3 *mixed*, not "two
 /// hinges" as the early notes claimed.
-const chapterStarts = [0, 12, 27, 36];
+const chapterStarts = [0, 12, 27, 36, 39];
 
-const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS'];
+const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS', 'SILHOUETTES'];
 
 int chapterOf(int levelIndex) {
   for (var c = chapterStarts.length - 1; c >= 0; c--) {

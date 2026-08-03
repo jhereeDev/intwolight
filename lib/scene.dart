@@ -14,14 +14,22 @@ import 'mesh.dart';
 /// Wall B is the plane z = -kWall, lit along -Z, with coords (x, y). They meet
 /// at the vertical line x = z = -kWall, which the isometric projection puts
 /// dead centre — so the seam reads as a real corner for free.
-const double kWall = 2.0; // wall plane offset from origin
-const double kExtent = 2.0; // how far each wall runs from the seam
-const double kFloor = -2.0;
+const double kWall = 2.35; // wall plane offset from origin
+const double kExtent = 2.7; // how far each wall runs from the seam
+const double kFloor = -2.2;
+
+/// The solid is drawn smaller than its own shadow.
+///
+/// Physically right — the sculpture hangs nearer the lights than the walls, so
+/// its shadows are magnified — and it fixes the real readability problem: at
+/// 1:1 a chapter III sculpture sprawls across the corner and covers the very
+/// shadows you are trying to read.
+const double kSolidScale = 0.78;
 
 /// Walls run taller than the room is deep. A cube reads as a box; a tall
 /// corner reads as a room, and it fills a phone's aspect instead of floating
 /// in a sea of black.
-const double kWallTop = 3.1;
+const double kWallTop = 3.6;
 
 // Palette. Warm light, cold shadow — the whole look lives in this contrast.
 const _bg = Color(0xFF08080A);
@@ -319,6 +327,9 @@ class CornerScenePainter extends CustomPainter {
 
   static const _view = V3(0.577, 0.577, 0.577);
 
+  static V3 _shrink(V3 v) =>
+      V3(v.x * kSolidScale, v.y * kSolidScale, v.z * kSolidScale);
+
   /// Painter's algorithm over triangles. Exact enough for the small,
   /// non-interpenetrating pieces these sculptures are built from; it would
   /// need a depth buffer for anything that self-intersects.
@@ -326,9 +337,9 @@ class CornerScenePainter extends CustomPainter {
     final faces = <({double depth, Path path, double shade})>[];
     for (final m in world) {
       for (var i = 0; i + 2 < m.tris.length; i += 3) {
-        final a = m.verts[m.tris[i]];
-        final b = m.verts[m.tris[i + 1]];
-        final c = m.verts[m.tris[i + 2]];
+        final a = _shrink(m.verts[m.tris[i]]);
+        final b = _shrink(m.verts[m.tris[i + 1]]);
+        final c = _shrink(m.verts[m.tris[i + 2]]);
         final n = (b - a).cross(c - a);
         final lit = n.dot(_view);
         if (lit <= 0) continue; // back face

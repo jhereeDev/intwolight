@@ -102,4 +102,89 @@ final formLevels = <Level>[
 
 /// Everything playable, in order. Generated levels first, then the authored
 /// organic chapter.
-final allLevels = <Level>[...generatedLevels, ...formLevels];
+final allLevels = <Level>[...generatedLevels, ...formLevels, ...silhouetteLevels];
+
+// ---------------------------------------------------------------------------
+// CHAPTER V — SILHOUETTES
+//
+// The Shadowmatic trick, and it costs almost nothing here because both lights
+// are axis-aligned.
+//
+// Wall B's shadow is (x, y): it does not depend on z **at all**. So a piece can
+// be slid to any depth without changing that shadow by one pixel. Author the
+// object as flat outlines in the XY plane, extrude each into its own thin slab,
+// and scatter the slabs through depth: the sculpture reads as unrelated
+// fragments floating apart, while their combined shadow is a clean, recognisable
+// figure. Wall A's shadow — (z, y) — becomes a row of abstract bars, which is
+// the second constraint and the actual puzzle.
+//
+// Targets are derived from the solution pose, so a designed silhouette needs the
+// mesh pre-rotated by the inverse of that pose: at the solution the rotation
+// cancels and the intended outline appears.
+
+Mesh _preRotated(Mesh m, Pose p) =>
+    m.map((v) => unrotateYawPitch(v, p.yaw, p.pitch));
+
+/// A flat outline pushed to depth [z] as a thin slab.
+Mesh _slab(List<V2> poly, double z, {double thick = 0.17}) =>
+    Mesh.prism(poly, thick, at: V3(0, 0, z));
+
+List<V2> _ellipse(double cx, double cy, double rx, double ry, {int n = 14}) => [
+      for (var i = 0; i < n; i++)
+        V2(cx + rx * math.cos(i * 2 * math.pi / n),
+            cy + ry * math.sin(i * 2 * math.pi / n)),
+    ];
+
+/// Assemble scattered slabs into one piece, pre-rotated for [solution].
+Mesh _figure(List<(List<V2>, double)> parts, Pose solution) => _preRotated(
+      Mesh.union([for (final (poly, z) in parts) _slab(poly, z)]),
+      solution,
+    );
+
+const _duckPose = Pose(0.62, -0.26, 0);
+const _fishPose = Pose(-0.78, 0.20, 0);
+
+final _duck = _figure([
+  (_ellipse(-0.10, -0.30, 0.62, 0.34), 0.00), // body
+  ([                                          // neck
+    const V2(0.10, -0.16), const V2(0.32, -0.10),
+    const V2(0.44, 0.34), const V2(0.22, 0.36),
+  ], -0.46),
+  (_ellipse(0.40, 0.46, 0.21, 0.19), 0.62), // head
+  ([                                        // beak
+    const V2(0.57, 0.50), const V2(0.92, 0.42), const V2(0.57, 0.36),
+  ], 0.95),
+  ([                                        // tail
+    const V2(-0.66, -0.20), const V2(-0.95, -0.02), const V2(-0.62, -0.44),
+  ], -0.80),
+], _duckPose);
+
+final _fish = _figure([
+  (_ellipse(0.00, 0.00, 0.52, 0.38), 0.00), // body
+  ([                                        // tail fin
+    const V2(-0.48, 0.02), const V2(-0.92, 0.34),
+    const V2(-0.86, 0.00), const V2(-0.92, -0.34),
+  ], 0.70),
+  ([                                        // dorsal fin
+    const V2(-0.16, 0.30), const V2(0.02, 0.78),
+    const V2(0.26, 0.28),
+  ], -0.62),
+  ([                                        // belly fin
+    const V2(-0.10, -0.30), const V2(0.04, -0.72), const V2(0.24, -0.28),
+  ], 0.42),
+], _fishPose);
+
+final silhouetteLevels = <Level>[
+  Level(
+    name: 'Duck',
+    hint: 'The pieces are not the picture.',
+    boxes: [Box.form(_duck)],
+    solution: _duckPose,
+  ),
+  Level(
+    name: 'Fish',
+    hint: 'Scattered, then whole.',
+    boxes: [Box.form(_fish)],
+    solution: _fishPose,
+  ),
+];
