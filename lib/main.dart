@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,19 +10,29 @@ import 'forms.dart';
 import 'map_screen.dart';
 import 'progress.dart';
 import 'scene.dart';
+import 'store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Declared in Info.plist and AndroidManifest too; this is the runtime half.
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-  runApp(InTwoLightsApp(progress: await Progress.load()));
+
+  final progress = await Progress.load();
+  final store = Store();
+  // Not awaited: a slow or unreachable store must never delay first paint.
+  // Store reports unlocked until it knows otherwise, so the map is correct
+  // either way and simply re-renders when the entitlement arrives.
+  unawaited(store.init());
+
+  runApp(InTwoLightsApp(progress: progress, store: store));
 }
 
 class InTwoLightsApp extends StatelessWidget {
-  const InTwoLightsApp({super.key, required this.progress});
+  const InTwoLightsApp({super.key, required this.progress, required this.store});
 
   final Progress progress;
+  final Store store;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -33,6 +44,7 @@ class InTwoLightsApp extends StatelessWidget {
         home: Builder(
           builder: (context) => MapScreen(
             progress: progress,
+            store: store,
             onPlay: (i) => Navigator.of(context).push<void>(
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 420),
@@ -183,6 +195,34 @@ class _PlayScreenState extends State<PlayScreen>
               const Positioned.fill(
                 child: IgnorePointer(child: _DragHint()),
               ),
+
+            // The panel waits for the glow to finish so the moment lands
+            // before the UI asks for a decision.
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: IgnorePointer(
+                ignoring: g < 0.95,
+                child: AnimatedSlide(
+                  offset: Offset(0, g > 0.95 ? 0 : 1),
+                  duration: const Duration(milliseconds: 340),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedOpacity(
+                    opacity: g > 0.95 ? 1 : 0,
+                    duration: const Duration(milliseconds: 220),
+                    child: _SolvePanel(
+                      stars: starsForScore(math.min(score.a, score.b)),
+                      precision: math.min(score.a, score.b),
+                      best: widget.progress.bestOf(_index),
+                      isLast: _index >= allLevels.length - 1,
+                      onNext: _index < allLevels.length - 1
+                          ? () => _load(_index + 1)
+                          : null,
+                      onMap: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             _Hud(
               index: _index,
@@ -437,4 +477,125 @@ class _HingeDial extends StatelessWidget {
           ),
         ),
       );
+}
+
+
+/// Shown when both walls lock. Reports what was earned and offers the only two
+/// moves worth offering — onward, or back to the map.
+///
+/// It deliberately does not block the scene: the pose is still live behind it,
+/// so a player who wants a third star can keep easing into the basin and watch
+/// the stars fill. Break the solve and the panel simply slides away.
+class _SolvePanel extends StatelessWidget {
+  const _SolvePanel({
+    required this.stars,
+    required this.precision,
+    required this.best,
+    required this.isLast,
+    required this.onNext,
+    required this.onMap,
+  });
+
+  final int stars;
+  final double precision, best;
+  final bool isLast;
+  final VoidCallback? onNext, onMap;
+
+  @override
+  Widget build(BuildContext context) {
+    final improved = precision >= best - 1e-9;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 26),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x0008080A), Color(0xF008080A), Color(0xFF08080A)],
+          stops: [0, 0.45, 1],
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('SOLVED',
+              style: TextStyle(
+                  fontSize: 11, letterSpacing: 8, color: Color(0xFFE0A82E))),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  child: AnimatedScale(
+                    scale: i < stars ? 1 : 0.78,
+                    duration: Duration(milliseconds: 260 + i * 110),
+                    curve: Curves.easeOutBack,
+                    child: Icon(
+                      i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                      size: 34,
+                      color: i < stars
+                          ? const Color(0xFFE0A82E)
+                          : Colors.white12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            // Precision, not a points total — the score IS how well it matched.
+            '${(precision * 100).toStringAsFixed(1)}%  match'
+            '${improved ? "" : "   ·   best ${(best * 100).toStringAsFixed(1)}%"}',
+            style: const TextStyle(
+                fontSize: 12, letterSpacing: 1.5, color: Colors.white38),
+          ),
+          if (stars < 3) ...[
+            const SizedBox(height: 6),
+            const Text('keep easing in for another star',
+                style: TextStyle(
+                    fontSize: 11, letterSpacing: 1, color: Colors.white24)),
+          ],
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: onMap,
+                  child: const Text('MAP',
+                      style: TextStyle(
+                          fontSize: 12,
+                          letterSpacing: 3,
+                          color: Colors.white38)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFE0A82E),
+                      foregroundColor: const Color(0xFF16120A),
+                      disabledBackgroundColor: Colors.white10,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4)),
+                    ),
+                    onPressed: onNext,
+                    child: Text(isLast ? 'THE END' : 'NEXT ROOM',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            letterSpacing: 3,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

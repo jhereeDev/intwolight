@@ -45,6 +45,8 @@ void main() {
         reason: 'a level could otherwise score a star without being solved');
   });
 
+  gateTests();
+
   test('best-of semantics: a sloppier replay cannot cost a star', () {
     final p = Progress({0: 0.99});
     expect(p.starsOf(0), 3);
@@ -52,5 +54,37 @@ void main() {
     expect(p.bestOf(0), 0.99);
     expect(p.solved(1), isFalse);
     expect(p.starsOf(1), 0);
+  });
+}
+
+// --- commercial gate -------------------------------------------------------
+
+void gateTests() {
+  test('chapter I is free forever; everything past it is the unlock', () {
+    expect(Progress.chapterLocked(0, unlocked: false), isFalse,
+        reason: 'the free chapter must never be gated');
+    for (var c = 1; c < chapterStarts.length; c++) {
+      expect(Progress.chapterLocked(c, unlocked: false), isTrue);
+      expect(Progress.chapterLocked(c, unlocked: true), isFalse);
+    }
+  });
+
+  test('the gate fails OPEN, never closed', () {
+    // Store.unlocked reports true whenever it could not reach RevenueCat, so
+    // a missing key, an outage or a flaky connection can never paywall
+    // someone who already paid — which would also be an App Review rejection
+    // under Guideline 3.1.1.
+    for (var c = 0; c < chapterStarts.length; c++) {
+      expect(Progress.chapterLocked(c, unlocked: true), isFalse,
+          reason: 'chapter $c locked despite an unreachable store');
+    }
+  });
+
+  test('the free chapter is a real chapter, not a teaser', () {
+    final free = chapterEnd(0) - chapterStarts[0];
+    expect(free, greaterThanOrEqualTo(10),
+        reason: 'a paywall this early reads as a demo, not a game');
+    expect(allLevels.length - free, greaterThan(free),
+        reason: 'the paid side should be the larger half');
   });
 }

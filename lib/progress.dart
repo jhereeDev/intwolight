@@ -79,10 +79,14 @@ class Progress {
     return n;
   }
 
-  /// Chapters are **not** skill-gated. Gating here is commercial — chapters 2
-  /// and 3 become the one-time RevenueCat unlock at M3 — so this stays false
-  /// until that lands. The map already renders a locked state for it.
-  bool chapterLocked(int c) => false;
+  /// Chapters are **not** skill-gated — the gate is commercial. Chapter I is
+  /// free forever; everything past it is the one-time unlock.
+  ///
+  /// [unlocked] comes from Store, which reports true whenever the store could
+  /// not be reached, so a bad key or an outage can never paywall someone who
+  /// already paid.
+  static bool chapterLocked(int c, {required bool unlocked}) =>
+      c > 0 && !unlocked;
 
   Timer? _flushTimer;
 

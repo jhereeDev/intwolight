@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 
 import 'forms.dart';
 import 'progress.dart';
+import 'store.dart';
+import 'unlock_screen.dart';
 
 const _bg = Color(0xFF08080A);
 const _amber = Color(0xFFE0A82E);
@@ -44,9 +46,15 @@ class MapLayout {
 }
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key, required this.progress, required this.onPlay});
+  const MapScreen({
+    super.key,
+    required this.progress,
+    required this.store,
+    required this.onPlay,
+  });
 
   final Progress progress;
+  final Store store;
 
   /// Returns the level index chosen; the caller pushes the play screen.
   final Future<void> Function(int index) onPlay;
@@ -61,11 +69,19 @@ class MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    widget.store.addListener(_onStore);
     WidgetsBinding.instance.addPostFrameCallback((_) => _centreOnCurrent());
   }
 
+  void _onStore() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _unlocked => widget.store.unlocked;
+
   @override
   void dispose() {
+    widget.store.removeListener(_onStore);
     _scroll.dispose();
     super.dispose();
   }
@@ -100,7 +116,15 @@ class MapScreenState extends State<MapScreen> {
                 onTapUp: (d) async {
                   final i = layout.hit(d.localPosition);
                   if (i == null) return;
-                  if (widget.progress.chapterLocked(chapterOf(i))) return;
+                  if (Progress.chapterLocked(chapterOf(i),
+                      unlocked: _unlocked)) {
+                    await Navigator.of(context).push<bool>(MaterialPageRoute(
+                      fullscreenDialog: true,
+                      builder: (_) => UnlockScreen(store: widget.store),
+                    ));
+                    if (mounted) setState(() {});
+                    return;
+                  }
                   await widget.onPlay(i);
                   if (mounted) setState(() {});
                 },
@@ -112,6 +136,7 @@ class MapScreenState extends State<MapScreen> {
                       layout: layout,
                       progress: widget.progress,
                       current: _current,
+                      unlocked: _unlocked,
                     ),
                   ),
                 ),
@@ -177,11 +202,13 @@ class _MapPainter extends CustomPainter {
     required this.layout,
     required this.progress,
     required this.current,
+    required this.unlocked,
   });
 
   final MapLayout layout;
   final Progress progress;
   final int current;
+  final bool unlocked;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -211,7 +238,7 @@ class _MapPainter extends CustomPainter {
 
   void _chapterHeader(Canvas canvas, Size size, int c) {
     final y = layout.headerY(c);
-    final locked = progress.chapterLocked(c);
+    final locked = Progress.chapterLocked(c, unlocked: unlocked);
     final done = progress.solvedInChapter(c);
     final total = chapterEnd(c) - chapterStarts[c];
 
@@ -255,8 +282,11 @@ class _MapPainter extends CustomPainter {
   /// a chain of little corners rather than a row of numbered circles.
   void _room(Canvas canvas, int i) {
     final o = layout.nodeAt(i);
-    final solved = progress.solved(i);
-    final locked = progress.chapterLocked(chapterOf(i));
+    final locked = Progress.chapterLocked(chapterOf(i), unlocked: unlocked);
+    // Locked beats solved. Progress survives an expired or refunded unlock, so
+    // without this a locked chapter renders in full amber as though it were
+    // still yours to play.
+    final solved = progress.solved(i) && !locked;
     final isCurrent = i == current && !solved && !locked;
     const r = 26.0;
 
