@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'forms.dart';
@@ -82,10 +84,23 @@ class Progress {
   /// until that lands. The map already renders a locked state for it.
   bool chapterLocked(int c) => false;
 
+  Timer? _flushTimer;
+
   /// Keeps the better of the two, so a sloppier replay can't cost you a star.
-  Future<void> record(int i, double weakest) async {
+  ///
+  /// Memory updates immediately; the disk write is debounced. This is called
+  /// on **every drag frame** while the pose sits in the solved basin, and
+  /// writing to SharedPreferences at 60Hz stutters the whole game.
+  void record(int i, double weakest) {
     if (weakest <= bestOf(i)) return;
     _best[i] = weakest;
+    _flushTimer?.cancel();
+    _flushTimer = Timer(const Duration(milliseconds: 600), flush);
+  }
+
+  Future<void> flush() async {
+    _flushTimer?.cancel();
+    _flushTimer = null;
     final p = await SharedPreferences.getInstance();
     await p.setStringList(
       _key,

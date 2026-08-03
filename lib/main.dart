@@ -63,6 +63,14 @@ class _PlayScreenState extends State<PlayScreen>
   Pose _pose = const Pose(0, 0, 0);
   late LevelRuntime _rt = LevelRuntime(allLevels[widget.index]);
 
+  // Scored once per pose change, not once in _apply and again in build().
+  late Score _score = _rt.score(_pose);
+
+  // Target outlines are a boolean union of ~200 triangles. Built once per
+  // level in wall-local space; the painter only applies an affine transform.
+  late Path _targetA = unionOutline2D(_rt.targetShadowsA());
+  late Path _targetB = unionOutline2D(_rt.targetShadowsB());
+
   /// Eases the whole scene between "cold" and "lit" so solving is a moment
   /// rather than a state flip.
   late final AnimationController _glow = AnimationController(
@@ -88,6 +96,9 @@ class _PlayScreenState extends State<PlayScreen>
 
   @override
   void dispose() {
+    // The disk write is debounced, so leaving quickly could otherwise drop
+    // the last improvement.
+    widget.progress.flush();
     _glow.dispose();
     super.dispose();
   }
@@ -96,6 +107,9 @@ class _PlayScreenState extends State<PlayScreen>
         _index = i.clamp(0, allLevels.length - 1);
         _rt = LevelRuntime(allLevels[_index]);
         _pose = const Pose(0, 0, 0);
+        _score = _rt.score(_pose);
+        _targetA = unionOutline2D(_rt.targetShadowsA());
+        _targetB = unionOutline2D(_rt.targetShadowsB());
         _wasSolved = false;
         _glow.value = 0;
       });
@@ -116,14 +130,17 @@ class _PlayScreenState extends State<PlayScreen>
     if (score.solved) {
       widget.progress.record(_index, math.min(score.a, score.b));
     }
-    setState(() => _pose = p);
+    setState(() {
+      _pose = p;
+      _score = score;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final lv = allLevels[_index];
     final world = worldMeshes(lv, _pose);
-    final score = _rt.score(_pose);
+    final score = _score;
     final g = Curves.easeOutCubic.transform(_glow.value);
 
     return Scaffold(
@@ -145,8 +162,8 @@ class _PlayScreenState extends State<PlayScreen>
                   size: Size.infinite,
                   painter: CornerScenePainter(
                     world: world,
-                    targetsA: _rt.targetShadowsA(),
-                    targetsB: _rt.targetShadowsB(),
+                    targetsA: _targetA,
+                    targetsB: _targetB,
                     castA: shadowMeshes(world, toWallA),
                     castB: shadowMeshes(world, toWallB),
                     hitA: score.a >= kSolveThreshold,

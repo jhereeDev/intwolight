@@ -64,8 +64,9 @@ List<Mesh> worldMeshes(Level lv, Pose p) => [
 List<Mesh2> shadowMeshes(List<Mesh> world, V2 Function(V3) project) =>
     [for (final m in world) Mesh2([for (final v in m.verts) project(v)], m.tris)];
 
-Mask maskOfShadows(List<Mesh2> shadows, int n) {
-  final g = Mask(n);
+Mask maskOfShadows(List<Mesh2> shadows, int n, {Mask? into}) {
+  final g = into ?? Mask(n);
+  if (into != null) into.bits.fillRange(0, into.bits.length, 0);
   for (final s in shadows) {
     fillTriangles(g, s.v, s.t);
   }
@@ -91,6 +92,11 @@ class LevelRuntime {
   final int res;
   final Mask _targetA, _targetB;
 
+  // Scratch buffers. score() runs on every drag frame; allocating two 4KB
+  // grids per call just to throw them away is pure GC churn.
+  late final Mask _scratchA = Mask(res);
+  late final Mask _scratchB = Mask(res);
+
   List<Mesh2> targetShadowsA() =>
       shadowMeshes(worldMeshes(level, level.solution), toWallA);
   List<Mesh2> targetShadowsB() =>
@@ -99,8 +105,10 @@ class LevelRuntime {
   Score score(Pose p) {
     final w = worldMeshes(level, p);
     return Score(
-      iou(maskOfShadows(shadowMeshes(w, toWallA), res), _targetA),
-      iou(maskOfShadows(shadowMeshes(w, toWallB), res), _targetB),
+      iou(maskOfShadows(shadowMeshes(w, toWallA), res, into: _scratchA),
+          _targetA),
+      iou(maskOfShadows(shadowMeshes(w, toWallB), res, into: _scratchB),
+          _targetB),
     );
   }
 }

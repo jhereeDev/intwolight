@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -69,13 +70,13 @@ Path _quad(List<V3> pts, Size s, double k, Offset o) {
 V3 onWallA(V2 h) => V3(-kWall, h.y, h.x);
 V3 onWallB(V2 h) => V3(h.x, h.y, -kWall);
 
-/// Build one filled path from a projected mesh.
+/// Build one filled path from a projected mesh, in **wall-local** coords.
 ///
 /// Every triangle is wound the same way before being added. A closed mesh
 /// projects its front and back faces with opposite windings, and under
 /// non-zero fill those cancel — the silhouette would come out with holes
 /// exactly where the shape is thickest.
-Path shadowPath(Mesh2 m, V3 Function(V2) toWorld, Size s, double k, Offset o) {
+Path shadowPath2D(Mesh2 m) {
   final path = Path()..fillType = PathFillType.nonZero;
   for (var i = 0; i + 2 < m.t.length; i += 3) {
     var a = m.v[m.t[i]], b = m.v[m.t[i + 1]], c = m.v[m.t[i + 2]];
@@ -86,28 +87,82 @@ Path shadowPath(Mesh2 m, V3 Function(V2) toWorld, Size s, double k, Offset o) {
       b = c;
       c = tmp;
     }
-    final pa = project(toWorld(a), s, k, o);
-    final pb = project(toWorld(b), s, k, o);
-    final pc = project(toWorld(c), s, k, o);
     path
-      ..moveTo(pa.dx, pa.dy)
-      ..lineTo(pb.dx, pb.dy)
-      ..lineTo(pc.dx, pc.dy)
+      ..moveTo(a.x, a.y)
+      ..lineTo(b.x, b.y)
+      ..lineTo(c.x, c.y)
       ..close();
   }
   return path;
 }
 
-/// True outline of a silhouette, for the target ghost. Union is expensive, so
-/// callers cache this per level rather than rebuilding it per frame.
-Path unionOutline(List<Mesh2> ms, V3 Function(V2) toWorld, Size s, double k,
-    Offset o) {
-  var acc = Path();
+/// True outline of a silhouette, for the target ghost.
+///
+/// `Path.combine` is a boolean op and is far too slow to run per frame — this
+/// was the whole cause of the stutter once meshes arrived, because a lathe has
+/// ~200 triangles and this ran twice a frame. It is built once per level in
+/// wall-local space and mapped to the screen with [wallMatrix].
+Path unionOutline2D(List<Mesh2> ms) {
+  // One path per *triangle*, then a balanced pairwise union.
+  //
+  // Two things matter here. Accumulating `acc = acc ∪ next` is O(n²) — every
+  // combine re-walks the whole accumulated outline, which is what made a
+  // 264-triangle lathe take 523ms. And the union must be per triangle, not per
+  // piece: a piece drawn as one non-zero path *fills* correctly but still
+  // contains every internal edge, so stroking it draws a wireframe instead of
+  // an outline.
+  var level = <Path>[];
   for (final m in ms) {
-    acc = Path.combine(
-        PathOperation.union, acc, shadowPath(m, toWorld, s, k, o));
+    for (var i = 0; i + 2 < m.t.length; i += 3) {
+      var a = m.v[m.t[i]], b = m.v[m.t[i + 1]], c = m.v[m.t[i + 2]];
+      final area = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+      if (area == 0) continue;
+      if (area < 0) {
+        final tmp = b;
+        b = c;
+        c = tmp;
+      }
+      level.add(Path()
+        ..moveTo(a.x, a.y)
+        ..lineTo(b.x, b.y)
+        ..lineTo(c.x, c.y)
+        ..close());
+    }
   }
-  return acc;
+  if (level.isEmpty) return Path();
+  while (level.length > 1) {
+    final next = <Path>[];
+    for (var i = 0; i < level.length; i += 2) {
+      next.add(i + 1 < level.length
+          ? Path.combine(PathOperation.union, level[i], level[i + 1])
+          : level[i]);
+    }
+    level = next;
+  }
+  return level.first;
+}
+
+/// Wall-local (u, v) -> screen is **affine**, so a cached path can simply be
+/// transformed rather than rebuilt.
+///
+/// Wall A: (u,v) -> world(-kWall, v, u).  Wall B: (u,v) -> world(u, v, -kWall).
+/// Both reduce to sx = a·u + c, sy = 0.5k·u - k·v + f.
+Float64List wallMatrix({required bool isA, required double k, required Offset o}) {
+  final sign = isA ? -1.0 : 1.0;
+  final a = sign * 0.866 * k;
+  final c = o.dx + sign * 0.866 * k * kWall;
+  final f = o.dy - 0.5 * k * kWall;
+
+  final m = Float64List(16);
+  m[0] = a; // m00
+  m[1] = 0.5 * k; // m10
+  m[4] = 0; // m01
+  m[5] = -k; // m11
+  m[10] = 1;
+  m[12] = c; // tx
+  m[13] = f; // ty
+  m[15] = 1;
+  return m;
 }
 
 class CornerScenePainter extends CustomPainter {
@@ -126,9 +181,8 @@ class CornerScenePainter extends CustomPainter {
   final List<Mesh> world;
   final List<Mesh2> castA, castB;
 
-  /// Pre-unioned outlines in *wall-local* space, rebuilt only when the level
-  /// or the viewport changes.
-  final List<Mesh2> targetsA, targetsB;
+  /// Pre-unioned outlines in *wall-local* space, built once per level.
+  final Path targetsA, targetsB;
   final bool hitA, hitB;
 
   /// 0 -> unsolved, 1 -> fully solved. Drives the warm bloom.
@@ -205,13 +259,15 @@ class CornerScenePainter extends CustomPainter {
     canvas.drawPath(wallB, seam);
 
     // ---- targets, then the shadows themselves -----------------------------
-    for (final (ms, map, hit) in [
-      (targetsA, onWallA, hitA),
-      (targetsB, onWallB, hitB),
+    final mA = wallMatrix(isA: true, k: k, o: o);
+    final mB = wallMatrix(isA: false, k: k, o: o);
+
+    for (final (path, mat, hit) in [
+      (targetsA, mA, hitA),
+      (targetsB, mB, hitB),
     ]) {
-      final outline = unionOutline(ms, map, size, k, o);
       canvas.drawPath(
-        outline,
+        path.transform(mat),
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.3
@@ -221,9 +277,9 @@ class CornerScenePainter extends CustomPainter {
 
     // A shadow is dark on a lit wall — not a bright shape on a dark one.
     // It warms toward amber only as the pair locks.
-    for (final (ms, map, hit) in [
-      (castA, onWallA, hitA),
-      (castB, onWallB, hitB),
+    for (final (ms, mat, hit) in [
+      (castA, mA, hitA),
+      (castB, mB, hitB),
     ]) {
       final paint = Paint()
         ..color = hit
@@ -231,7 +287,7 @@ class CornerScenePainter extends CustomPainter {
             : const Color(0xFF05050A).withValues(alpha: 0.78)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2);
       for (final m in ms) {
-        canvas.drawPath(shadowPath(m, map, size, k, o), paint);
+        canvas.drawPath(shadowPath2D(m).transform(mat), paint);
       }
     }
 
