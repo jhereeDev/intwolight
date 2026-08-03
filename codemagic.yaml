@@ -63,20 +63,29 @@ workflows:
       # has no ad SDK, so that specific reason does not apply — `latest` is kept
       # only so the image is not whatever happens to be default that month.
       xcode: latest
-      groups:
-        # ⚠️ Must contain CERTIFICATE_PRIVATE_KEY, and must be created ON THIS
-        # APP in Codemagic. Checked 2026-08-03: variable groups are app-scoped,
-        # global variables are empty (and being removed from personal
-        # accounts), and no certificate is shared at account level — so the
-        # sarimanok group is NOT reachable from here. Referencing it silently
-        # yields an empty key.
-        #
-        # ⚠️ And the key is not optional. The Apple account already holds
-        # THREE Apple Distribution certificates (expiring 2027-07-23, 07-28 and
-        # 07-31), which is Apple's hard cap. `fetch-signing-files --create`
-        # therefore cannot mint a fourth: without the private key of an
-        # existing certificate it will try to create one and fail outright.
-        - intwolights_ios
+      # ⚠️ NO variable group yet — and referencing one that does not exist is
+      # itself a config error, so it is commented out rather than left dangling.
+      #
+      # Codemagic variable groups are app-scoped. Checked 2026-08-03: this
+      # app has no variables, account globals are empty (and are being removed
+      # from personal accounts), and no certificate is shared at account level
+      # — so the sarimanok group is NOT reachable from here.
+      #
+      # Without CERTIFICATE_PRIVATE_KEY, `fetch-signing-files --create`
+      # generates a fresh key and certificate on every run. That works, but it
+      # BURNS AN APPLE CERTIFICATE SLOT EACH BUILD. The account currently holds
+      # 1 of a possible 3 iOS Distribution certificates, so there is runway for
+      # about two builds before Apple refuses.
+      #
+      # The durable fix is to add CERTIFICATE_PRIVATE_KEY as a secret in a
+      # group on THIS app and re-enable the two lines below; the certificate
+      # then binds to that key and is reused forever.
+      #
+      # NOTE the separate caps: "Apple Distribution" (3, currently full) and
+      # "iOS Distribution" (3, currently 1 used) are DIFFERENT types. An
+      # earlier reading of this as one full pool was wrong.
+      # groups:
+      #   - intwolights_ios
       vars:
         BUNDLE_ID: com.jhere.intwolights
     triggering:
