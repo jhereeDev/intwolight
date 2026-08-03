@@ -90,16 +90,18 @@ Full reasoning, including the six candidates that were killed to get here, is in
 | Area | State |
 |---|---|
 | **M0 kill gate** | ✅ **PASSED 2026-08-03**, seven days early. Jhere solved the hinge level and reported *deduction*, not fiddling |
-| Projection + scoring | ✅ dual-wall shadows, convex hull, raster IoU |
+| Projection + scoring | ✅ dual-wall shadows, **arbitrary triangle meshes**, raster IoU |
 | Level generator | ✅ `tool/gen_levels.dart`, deterministic, rejection-sampled |
-| Levels | ✅ **36**, three chapters by hinge count (0 / 1 / 2), curated easiest-first |
-| Tests | ✅ **10 passing**, incl. all 36 verified solvable and none pre-solved |
+| Levels | ✅ **41** across five chapters — 36 generated, 3 organic forms, 2 designed silhouettes |
+| Tests | ✅ **22 passing** |
 | `flutter analyze` | ✅ clean |
-| Verified running | ✅ Pixel 10 Pro emulator, release build |
-| **RevenueCat** | ❌ **not integrated** — M3. *Not* blocked: purchase **or** RevenueCat Ads both qualify, and Google Play alone is a valid store |
-| **CI** | ❌ **none.** See "known debt" |
-| Design pass | ❌ M0 UI is deliberately ugly — three flat panels and two numbers |
-| Progression / stars / map | ❌ not started |
+| Verified running | ✅ `Medium_Phone_API_36.0`, release build |
+| Design pass | ✅ the corner is a real room: two walls, floor, two light pools, shadows dark on lit walls, dust, eased solve glow + haptics |
+| Onboarding | ✅ wordless — a drifting ghost touch point, gone on first drag. No modal, no Skip |
+| Progression / stars / map | ✅ level map of miniature rooms, chapters, stars on **precision** (0.92 / 0.955 / 0.985), `shared_preferences` |
+| **CI** | ✅ `codemagic.yaml` at the root, ported from sarimanok. **Untested — no build has run yet** |
+| **RevenueCat** | ❌ **not integrated** — M3, and the only thing between here and a shippable 1.0 |
+| Store assets | ❌ no icon, no screenshots, no privacy policy, no demo video |
 
 ---
 
