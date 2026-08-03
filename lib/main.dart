@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'geom.dart';
 import 'level.dart';
+import 'levels.g.dart';
 
 // M0 — the kill gate. Deliberately ugly: three flat panels, a slider, and two
 // numbers. The only question this build exists to answer is whether making one
@@ -32,31 +33,34 @@ class GateScreen extends StatefulWidget {
 class _GateScreenState extends State<GateScreen> {
   int _index = 0;
   Pose _pose = const Pose(0, 0, 0);
-  late LevelRuntime _rt = LevelRuntime(levels[0]);
+  late LevelRuntime _rt = LevelRuntime(generatedLevels[0]);
 
   void _load(int i) => setState(() {
-        _index = i;
-        _rt = LevelRuntime(levels[i]);
+        _index = i.clamp(0, generatedLevels.length - 1);
+        _rt = LevelRuntime(generatedLevels[_index]);
         _pose = const Pose(0, 0, 0);
       });
 
   @override
   Widget build(BuildContext context) {
-    final lv = levels[_index];
+    final lv = generatedLevels[_index];
     final world = worldCorners(lv, _pose);
     final score = _rt.score(_pose);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('TWO SUNS · ${lv.name}'),
+        title: Text('TWO SUNS · ${_index + 1}/${generatedLevels.length}'),
         actions: [
-          for (var i = 0; i < levels.length; i++)
-            TextButton(
-              onPressed: () => _load(i),
-              child: Text('${i + 1}',
-                  style: TextStyle(
-                      color: i == _index ? Colors.amber : Colors.white38)),
-            ),
+          IconButton(
+            onPressed: _index > 0 ? () => _load(_index - 1) : null,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          IconButton(
+            onPressed: _index < generatedLevels.length - 1
+                ? () => _load(_index + 1)
+                : null,
+            icon: const Icon(Icons.chevron_right),
+          ),
         ],
       ),
       body: Column(

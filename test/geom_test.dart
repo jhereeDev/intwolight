@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:two_suns/geom.dart';
 import 'package:two_suns/level.dart';
+import 'package:two_suns/levels.g.dart';
 
 void main() {
   test('hull drops interior points and keeps the corners', () {
@@ -35,8 +36,22 @@ void main() {
         closeTo(1.0 / 1.5, 0.02));
   });
 
-  // The one that protects the design: every level must be solvable at its own
-  // stated solution, and must not already be solved when you open it.
+  // The invariant that makes generation safe to trust: whatever the generator
+  // emits, every level must be solvable at its own stated solution and must
+  // not already be solved when you open it. If a future tuning pass breaks
+  // either, this fails rather than shipping an unsolvable level.
+  test('all ${generatedLevels.length} generated levels are sane', () {
+    expect(generatedLevels, isNotEmpty);
+    for (final lv in generatedLevels) {
+      final rt = LevelRuntime(lv);
+      final solved = rt.score(lv.solution);
+      expect(solved.solved, isTrue, reason: 'level ${lv.name} unsolvable');
+      expect(rt.score(const Pose(0, 0, 0)).solved, isFalse,
+          reason: 'level ${lv.name} opens already solved');
+    }
+  });
+
+  // Same two guarantees for the hand-authored tutorial trio.
   group('levels', () {
     for (final lv in levels) {
       test('${lv.name} scores 1.0 at its solution pose', () {

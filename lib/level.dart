@@ -75,13 +75,18 @@ class Score {
 }
 
 class LevelRuntime {
-  LevelRuntime(this.level)
+  /// [res] is the scoring grid. 64 for play; the generator drops to 32, where
+  /// it is 4x cheaper and still far finer than the accept/reject thresholds.
+  LevelRuntime(this.level, {this.res = 64})
       : _targetA = rasterize(
-            shadows(worldCorners(level, level.solution), toWallA)),
+            shadows(worldCorners(level, level.solution), toWallA),
+            n: res),
         _targetB = rasterize(
-            shadows(worldCorners(level, level.solution), toWallB));
+            shadows(worldCorners(level, level.solution), toWallB),
+            n: res);
 
   final Level level;
+  final int res;
   final Mask _targetA, _targetB;
 
   List<List<V2>> targetHullsA() =>
@@ -92,8 +97,8 @@ class LevelRuntime {
   Score score(Pose p) {
     final w = worldCorners(level, p);
     return Score(
-      iou(rasterize(shadows(w, toWallA)), _targetA),
-      iou(rasterize(shadows(w, toWallB)), _targetB),
+      iou(rasterize(shadows(w, toWallA), n: res), _targetA),
+      iou(rasterize(shadows(w, toWallB), n: res), _targetB),
     );
   }
 }
