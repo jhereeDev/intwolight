@@ -6,12 +6,19 @@ import 'package:flutter/services.dart';
 import 'geom.dart';
 import 'level.dart';
 import 'levels.g.dart';
+import 'map_screen.dart';
+import 'progress.dart';
 import 'scene.dart';
 
-void main() => runApp(const InTwoLightsApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(InTwoLightsApp(progress: await Progress.load()));
+}
 
 class InTwoLightsApp extends StatelessWidget {
-  const InTwoLightsApp({super.key});
+  const InTwoLightsApp({super.key, required this.progress});
+
+  final Progress progress;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -20,12 +27,31 @@ class InTwoLightsApp extends StatelessWidget {
         theme: ThemeData.dark(useMaterial3: true).copyWith(
           scaffoldBackgroundColor: const Color(0xFF08080A),
         ),
-        home: const PlayScreen(),
+        home: Builder(
+          builder: (context) => MapScreen(
+            progress: progress,
+            onPlay: (i) => Navigator.of(context).push<void>(
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 420),
+                reverseTransitionDuration: const Duration(milliseconds: 300),
+                // Fade, not slide. The map and the room are the same space at
+                // two scales, so sliding between them would read as a lie.
+                pageBuilder: (_, a, _) => FadeTransition(
+                  opacity: a,
+                  child: PlayScreen(index: i, progress: progress),
+                ),
+              ),
+            ),
+          ),
+        ),
       );
 }
 
 class PlayScreen extends StatefulWidget {
-  const PlayScreen({super.key});
+  const PlayScreen({super.key, required this.index, required this.progress});
+
+  final int index;
+  final Progress progress;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -33,9 +59,9 @@ class PlayScreen extends StatefulWidget {
 
 class _PlayScreenState extends State<PlayScreen>
     with SingleTickerProviderStateMixin {
-  int _index = 0;
+  late int _index = widget.index;
   Pose _pose = const Pose(0, 0, 0);
-  late LevelRuntime _rt = LevelRuntime(generatedLevels[0]);
+  late LevelRuntime _rt = LevelRuntime(generatedLevels[widget.index]);
 
   /// Eases the whole scene between "cold" and "lit" so solving is a moment
   /// rather than a state flip.
@@ -83,6 +109,12 @@ class _PlayScreenState extends State<PlayScreen>
     } else if (!score.solved && _wasSolved) {
       _wasSolved = false;
       _glow.reverse();
+    }
+    // Record continuously while solved, so easing further into the basin
+    // earns the third star. Stars are precision, not speed — there is no
+    // reason to punish someone for keeping at it.
+    if (score.solved) {
+      widget.progress.record(_index, math.min(score.a, score.b));
     }
     setState(() => _pose = p);
   }
@@ -140,7 +172,10 @@ class _PlayScreenState extends State<PlayScreen>
               glow: g,
               hinge: lv.hasHinge ? _pose.hinge : null,
               onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
-              onPrev: _index > 0 ? () => _load(_index - 1) : null,
+              stars: score.solved
+                  ? starsForScore(math.min(score.a, score.b))
+                  : 0,
+              onBack: () => Navigator.of(context).pop(),
               onNext: _index < generatedLevels.length - 1
                   ? () => _load(_index + 1)
                   : null,
@@ -234,18 +269,20 @@ class _Hud extends StatelessWidget {
     required this.glow,
     required this.hinge,
     required this.onHinge,
-    required this.onPrev,
+    required this.stars,
+    required this.onBack,
     required this.onNext,
     required this.onReset,
   });
 
   final int index, total;
   final double a, b, glow;
+  final int stars;
 
   /// null when the level has no joint — the control simply isn't there.
   final double? hinge;
   final ValueChanged<double> onHinge;
-  final VoidCallback? onPrev, onNext, onReset;
+  final VoidCallback? onBack, onNext, onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -255,6 +292,9 @@ class _Hud extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 10, 8, 0),
           child: Row(
             children: [
+              _GhostButton(
+                  icon: Icons.keyboard_arrow_left_rounded, onTap: onBack),
+              const SizedBox(width: 2),
               Text(
                 '${index + 1}'.padLeft(2, '0'),
                 style: TextStyle(
@@ -270,9 +310,19 @@ class _Hud extends StatelessWidget {
                     fontSize: 13, letterSpacing: 2, color: Colors.white24),
               ),
               const Spacer(),
+              // Stars appear only once earned — nothing to taunt you with
+              // while you're still working.
+              for (var s = 0; s < stars; s++)
+                const Padding(
+                  padding: EdgeInsets.only(left: 5),
+                  child: Icon(Icons.star_rounded,
+                      size: 13, color: Color(0xFFE0A82E)),
+                ),
+              const SizedBox(width: 8),
               _GhostButton(icon: Icons.refresh_rounded, onTap: onReset),
-              _GhostButton(icon: Icons.chevron_left_rounded, onTap: onPrev),
-              _GhostButton(icon: Icons.chevron_right_rounded, onTap: onNext),
+              _GhostButton(
+                  icon: Icons.chevron_right_rounded,
+                  onTap: glow > 0.9 ? onNext : null),
             ],
           ),
         ),
