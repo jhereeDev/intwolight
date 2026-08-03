@@ -31,8 +31,8 @@ class Store extends ChangeNotifier {
   ///      exactly one thing, so "owns something" and "owns the unlock" are the
   ///      same statement — and a paying customer locked out by a typo is far
   ///      worse than a customer let in by a loose check.
-  static const entitlement =
-      String.fromEnvironment('RC_ENTITLEMENT', defaultValue: 'all_chapters');
+  static const entitlement = String.fromEnvironment('RC_ENTITLEMENT',
+      defaultValue: 'In Two Lights Pro');
 
   static const _iosKey = String.fromEnvironment('RC_IOS_KEY');
   static const _androidKey = String.fromEnvironment('RC_ANDROID_KEY');
@@ -54,6 +54,23 @@ class Store extends ChangeNotifier {
   bool get unlocked => _forceLock ? false : (_entitled || !_configured);
 
   bool get configured => _configured;
+
+  /// RevenueCat's Test Store keys start with `test_`. They simulate purchases
+  /// with no App Store Connect setup, which is how this flow gets verified
+  /// before the Paid Applications agreement exists — but a build that ships
+  /// with one takes no money and cannot restore a real purchase.
+  ///
+  /// ⚠️ **A test key only works in a debug or profile build.** In release the
+  /// SDK itself puts up a "Wrong API Key" dialog and then *closes the app* —
+  /// verified on device 2026-08-03. So test the purchase flow with
+  /// `flutter run --dart-define=RC_ANDROID_KEY=test_...` and never assume a
+  /// release build will behave the same.
+  ///
+  /// It is surfaced rather than merely logged: if a test key ever reaches
+  /// production the unlock screen says so on its face, which is a bad minute
+  /// instead of a bad month of silently zero revenue.
+  static bool get usingTestStore =>
+      _iosKey.startsWith('test_') || _androidKey.startsWith('test_');
   bool get canBuy => _configured && _package != null;
   String get price => _price ?? '';
   String? get lastError => _lastError;
@@ -70,6 +87,11 @@ class Store extends ChangeNotifier {
       if (key.isEmpty) return;
       await Purchases.configure(PurchasesConfiguration(key));
       _configured = true;
+      if (usingTestStore) {
+        debugPrint('Store: ⚠️  TEST STORE key in use — purchases are '
+            'simulated and no money is taken. Swap in the appl_/goog_ keys '
+            'before shipping.');
+      }
 
       Purchases.addCustomerInfoUpdateListener(_apply);
       _apply(await Purchases.getCustomerInfo());

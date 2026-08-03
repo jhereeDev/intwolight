@@ -147,6 +147,17 @@ class _UnlockScreenState extends State<UnlockScreen>
                               ),
                       ),
                     ),
+                    if (Store.usingTestStore)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text(
+                          'TEST STORE — purchases are simulated',
+                          style: TextStyle(
+                              fontSize: 10,
+                              letterSpacing: 2,
+                              color: Color(0xFFB4553A)),
+                        ),
+                      ),
                     // Apple requires this for any non-consumable purchase
                     // (Guideline 3.1.1). Its absence is a rejection.
                     TextButton(
