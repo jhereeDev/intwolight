@@ -20,10 +20,19 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// Review, which is a guaranteed rejection under Guideline 3.1.1. Losing a
 /// sale to a misconfiguration is much cheaper than that.
 class Store extends ChangeNotifier {
-  /// Matches the entitlement identifier configured in the RevenueCat
-  /// dashboard. If this string and the dashboard disagree, purchases succeed
-  /// and nothing unlocks — the single most common way this integration fails.
-  static const entitlement = 'all_chapters';
+  /// Entitlement identifier as configured in the RevenueCat dashboard.
+  ///
+  /// A mismatch between this string and the dashboard is the single most
+  /// common way this integration fails: the purchase succeeds, money changes
+  /// hands, and nothing unlocks. Two defences:
+  ///   1. it is overridable at build time, so a dashboard rename does not
+  ///      need a code change and a re-review;
+  ///   2. [_entitledIn] falls back to *any* active entitlement. This app sells
+  ///      exactly one thing, so "owns something" and "owns the unlock" are the
+  ///      same statement — and a paying customer locked out by a typo is far
+  ///      worse than a customer let in by a loose check.
+  static const entitlement =
+      String.fromEnvironment('RC_ENTITLEMENT', defaultValue: 'all_chapters');
 
   static const _iosKey = String.fromEnvironment('RC_IOS_KEY');
   static const _androidKey = String.fromEnvironment('RC_ANDROID_KEY');
@@ -86,8 +95,19 @@ class Store extends ChangeNotifier {
     }
   }
 
+  static bool _entitledIn(CustomerInfo info) {
+    if (info.entitlements.active.containsKey(entitlement)) return true;
+    if (info.entitlements.active.isNotEmpty) {
+      debugPrint('Store: "$entitlement" not found, but '
+          '${info.entitlements.active.keys.join(", ")} is active — unlocking. '
+          'Fix the identifier to silence this.');
+      return true;
+    }
+    return false;
+  }
+
   void _apply(CustomerInfo info) {
-    final now = info.entitlements.active.containsKey(entitlement);
+    final now = _entitledIn(info);
     if (now != _entitled) {
       _entitled = now;
       notifyListeners();
