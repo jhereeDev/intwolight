@@ -1,0 +1,157 @@
+# Codemagic CI/CD — In Two Lights
+#
+# ⚠️ THIS FILE MUST LIVE AT THE REPOSITORY ROOT. Codemagic looks for
+# `codemagic.yaml` at the root and nowhere else — it does not search, and there
+# is no setting to point it elsewhere. On sarimanok it sat one directory down
+# at first and Codemagic reported "No configuration file found" with the app
+# otherwise correctly connected, which reads like a permissions problem and is
+# not one.
+#
+# Adapted from D:\Claude\flame-minis\codemagic.yaml (sarimanok), which is a
+# pipeline that has actually shipped. Every ⚠️ below records a mistake already
+# paid for once on that project — do not "simplify" those lines.
+#
+# ⚠️ iOS CANNOT be built on Windows. Xcode is macOS-only, and neither of
+# Jhere's machines is a Mac, so this file is not a convenience — it is the ONLY
+# route to the App Store. Apple-first was chosen 2026-08-03, which makes this
+# file a hard dependency of shipping rather than a nice-to-have.
+#
+# Unlike sarimanok this repo is a single app at the root, so there is no
+# `cd games/<name>` in any script and no path prefix on the artifact globs.
+#
+# Everything secret lives in Codemagic env-var *groups* (marked "secure"), not
+# in this file.
+
+definitions:
+  flutter_version: &flutter_version 3.44.8
+
+  # ⚠️ One anchor per step, not a list. YAML cannot splice a sequence into
+  # another sequence — `- *quality` on a list anchor inserts the list itself as
+  # a single element, and Codemagic rejects it with "str type expected".
+  deps: &deps
+    name: Dependencies
+    script: flutter pub get
+
+  analyze: &analyze
+    name: Analyze
+    script: flutter analyze
+
+  tests: &tests
+    name: Tests
+    script: flutter test
+
+workflows:
+  # -------------------------------------------------------------------- iOS
+  #
+  # Reuses the Codemagic setup already on this account from sarimanok:
+  #   - App Store Connect API key integration named "asc-key"
+  #   - a secure variable group holding CERTIFICATE_PRIVATE_KEY
+  #
+  # ⚠️ Signing is explicit via `fetch-signing-files --create`. The managed
+  # `ios_signing:` block ONLY fetches pre-existing profiles and fails outright
+  # on a fresh bundle id. com.jhere.intwolights IS a fresh bundle id — this is
+  # the exact situation that cost a guaranteed red build on sarimanok.
+  ios-release:
+    name: In Two Lights → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: asc-key
+    environment:
+      flutter: *flutter_version
+      # sarimanok pins this because google_mobile_ads needs Xcode 16+. This app
+      # has no ad SDK, so that specific reason does not apply — `latest` is kept
+      # only so the image is not whatever happens to be default that month.
+      xcode: latest
+      groups:
+        # Needs: CERTIFICATE_PRIVATE_KEY. Reuse the sarimanok group if the
+        # certificate is the same Apple team; otherwise make a new one.
+        - Sarimanok
+      vars:
+        BUNDLE_ID: com.jhere.intwolights
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: 'ios-v*'
+          include: true
+    scripts:
+      - *deps
+      - *analyze
+      - *tests
+      - name: Initialize keychain
+        script: keychain initialize
+      - name: Fetch or create signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --platform IOS \
+            --create
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Build signed IPA
+        # $BUILD_NUMBER is Codemagic's own per-app counter — always unique and
+        # increasing, and it needs no numeric App Store ID to look anything up.
+        script: flutter build ipa --release --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # ⚠️ FALSE means "upload, do not submit for beta review" — it does NOT
+        # mean "skip TestFlight". The binary still uploads and processes, and
+        # an internal group picks it up automatically.
+        #
+        # `true` submits to TestFlight beta review, which is the EXTERNAL
+        # testing path and requires Beta App Information to exist first. On
+        # sarimanok that made a build upload and process correctly and then die
+        # on the last step with "Complete test information is required ...
+        # App is missing required Beta App Information: Feedback Email."
+        # Codemagic reports that whole run as "post-processing failed", which
+        # reads like the delivery failed. It did not — check TestFlight before
+        # believing a red run here.
+        submit_to_testflight: false
+        submit_to_app_store: false # promote manually
+      email:
+        recipients: [figueroa.jheremiah@gmail.com]
+        notify:
+          success: true
+          failure: true
+
+  # ---------------------------------------------------------------- Android
+  #
+  # Kept even though Apple is the chosen first store: it needs no Apple
+  # membership, and the Shipaton rules accept Google Play on its own. If App
+  # Review turns hostile close to the 2026-09-30 deadline, this is the escape
+  # hatch that still makes the entry valid.
+  android-release:
+    name: In Two Lights → Play internal
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      flutter: *flutter_version
+      groups:
+        # Needs: CM_KEYSTORE, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS,
+        # CM_KEY_PASSWORD, and GCLOUD_SERVICE_ACCOUNT_CREDENTIALS to publish.
+        - InTwoLights_Android
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: 'android-v*'
+          include: true
+    scripts:
+      - *deps
+      - *analyze
+      - *tests
+      - name: Build App Bundle
+        script: flutter build appbundle --release --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/app/outputs/bundle/**/*.aab
+    publishing:
+      email:
+        recipients: [figueroa.jheremiah@gmail.com]
+        notify:
+          success: true
+          failure: true

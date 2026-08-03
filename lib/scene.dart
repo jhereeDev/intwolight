@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import 'geom.dart';
-import 'level.dart';
 import 'mesh.dart';
 
 /// The corner. One coherent room instead of three disconnected panels.

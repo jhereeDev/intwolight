@@ -33,8 +33,18 @@ There is **no validated difficulty metric** — two were tried and both failed (
 You are the only ground truth available, and this decides whether the curve needs work.
 Level 1 was played and solved on the PC 2026-08-03; 6 and 12 are still open.
 
-**2. Decide: Android-first, or also Apple?** Android-first drops the Paid Applications item
-entirely and reuses `flame-minis`' working Codemagic config. Apple can be added later.
+**2. ✅ DECIDED 2026-08-03 — APPLE FIRST.** Three consequences, all now live:
+
+- 🔴 **The Paid Applications agreement is back on the critical path.** It is optional only if you
+  ship Android; it is *required* for any App Store IAP. App Store Connect → Agreements, Tax, and
+  Banking. 15 minutes, and M3 cannot complete without it.
+- **iOS cannot be built on either machine.** Xcode is macOS-only and neither the PC nor the laptop
+  is a Mac, so `codemagic.yaml` (ported from sarimanok, at the repo root) is not a convenience —
+  it is the only route to the App Store.
+- **App Review is the schedule risk.** The first public release must land inside
+  2026-07-31 → 09-30, and a rejection costs days. Ship 1.0 early and update, per RevenueCat's own
+  advice. `android-release` is kept in the CI config as the escape hatch: Google Play alone is a
+  valid Shipaton entry if Review turns hostile near the deadline.
 
 **3. Post build-in-public.** The #BuildInPublic award pays **$30k / $20k / $10k** — double Best
 Game — and its engagement window (**2026-07-31 → 09-30**) is already running. Tag `#Shipaton`

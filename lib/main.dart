@@ -12,6 +12,9 @@ import 'scene.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Declared in Info.plist and AndroidManifest too; this is the runtime half.
+  await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(InTwoLightsApp(progress: await Progress.load()));
 }
 
