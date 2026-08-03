@@ -86,13 +86,19 @@ Level _candidate(math.Random r, int hinges, int index) {
   final count = 2 + r.nextInt(3); // 2–4 boxes
   final boxes = <Box>[];
   var at = const V3(0, 0, 0);
+  var prevLong = -1;
 
   for (var i = 0; i < count; i++) {
-    // One axis stays long so silhouettes have direction instead of reading
-    // as a cloud of cubes.
-    final long = r.nextInt(3);
-    double ext(int axis) =>
-        axis == long ? 0.5 + r.nextDouble() * 0.45 : 0.16 + r.nextDouble() * 0.14;
+    // One axis stays long so silhouettes have direction instead of reading as
+    // a cloud of cubes — and it must differ from the previous arm's, or the
+    // chain extends in a straight line and the whole sculpture is a featureless
+    // column. (Generated level 1 was exactly that before this rule.)
+    var long = r.nextInt(3);
+    if (long == prevLong) long = (long + 1 + r.nextInt(2)) % 3;
+
+    double ext(int axis) => axis == long
+        ? 0.5 + r.nextDouble() * 0.45
+        : 0.16 + r.nextDouble() * 0.14;
     final half = V3(ext(0), ext(1), ext(2));
 
     boxes.add(Box(
@@ -101,16 +107,17 @@ Level _candidate(math.Random r, int hinges, int index) {
       hinged: i > 0 && i <= hinges,
     ));
 
-    // Hang the next box off the end of this one, with a little overlap so the
-    // chain stays visually joined.
-    final axis = r.nextInt(3);
+    // Hang the next arm off the end of this one along its long axis, with a
+    // little overlap so the chain stays visually joined. Since the next arm
+    // runs along a different axis, every joint is a bend.
     final dir = r.nextBool() ? 1.0 : -1.0;
-    final step = 0.75;
+    const step = 0.8;
     at = V3(
-      at.x + (axis == 0 ? half.x * 2 * step * dir : 0),
-      at.y + (axis == 1 ? half.y * 2 * step * dir : 0),
-      at.z + (axis == 2 ? half.z * 2 * step * dir : 0),
+      at.x + (long == 0 ? half.x * 2 * step * dir : 0),
+      at.y + (long == 1 ? half.y * 2 * step * dir : 0),
+      at.z + (long == 2 ? half.z * 2 * step * dir : 0),
     );
+    prevLong = long;
   }
 
   return Level(

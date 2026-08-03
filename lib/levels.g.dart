@@ -9,389 +9,382 @@ import 'geom.dart';
 import 'level.dart';
 
 const generatedLevels = <Level>[
-  // #1  approach 0.084 · correlation 1.00
+  // #1  approach 0.036 · correlation 0.53
   Level(
     name: '1',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2577, 0.8367, 0.2708)),
-      Box(center: V3(0.0000, -1.2550, 0.0000), half: V3(0.1956, 0.8245, 0.2496)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1981, 0.5433, 0.2714)),
+      Box(center: V3(0.0000, 0.8693, 0.0000), half: V3(0.5657, 0.2973, 0.1630)),
     ],
-    solution: Pose(-0.1240, 0.5741, 0.0000),
+    solution: Pose(-2.1503, 0.5569, 0.0000),
   ),
-  // #2  approach 0.060 · correlation 1.00
+  // #2  approach 0.032 · correlation 0.67
   Level(
     name: '2',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5775, 0.2033, 0.2011)),
-      Box(center: V3(0.0000, 0.0000, -0.3017), half: V3(0.5297, 0.2467, 0.2191)),
-      Box(center: V3(0.0000, 0.0000, 0.0269), half: V3(0.2804, 0.2850, 0.8143)),
-      Box(center: V3(0.0000, 0.4275, 0.0269), half: V3(0.8676, 0.2792, 0.2656)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2819, 0.9151, 0.2049)),
+      Box(center: V3(0.0000, -1.4641, 0.0000), half: V3(0.5019, 0.2459, 0.1603)),
     ],
-    solution: Pose(-0.1054, -0.1313, 0.0000),
+    solution: Pose(-0.3322, -0.5508, 0.0000),
   ),
-  // #3  approach 0.052 · correlation 0.62
+  // #3  approach 0.024 · correlation 0.75
   Level(
     name: '3',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2641, 0.7977, 0.2858)),
-      Box(center: V3(0.3962, 0.0000, 0.0000), half: V3(0.2476, 0.6412, 0.2187)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1808, 0.7408, 0.2545)),
+      Box(center: V3(0.0000, -1.1852, 0.0000), half: V3(0.7225, 0.2407, 0.1675)),
     ],
-    solution: Pose(1.4846, 0.4331, 0.0000),
+    solution: Pose(-3.0350, -0.3674, 0.0000),
   ),
-  // #4  approach 0.032 · correlation 0.73
+  // #4  approach 0.024 · correlation 1.00
   Level(
     name: '4',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2668, 0.6008, 0.2527)),
-      Box(center: V3(-0.4002, 0.0000, 0.0000), half: V3(0.1629, 0.8914, 0.1726)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2815, 0.6951, 0.2760)),
+      Box(center: V3(0.0000, 1.1121, 0.0000), half: V3(0.7379, 0.2445, 0.2706)),
     ],
-    solution: Pose(-2.9892, 0.4389, 0.0000),
+    solution: Pose(3.0225, -0.8292, 0.0000),
   ),
-  // #5  approach 0.028 · correlation 0.88
+  // #5  approach 0.020 · correlation 0.63
   Level(
     name: '5',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1825, 0.5425, 0.2768)),
-      Box(center: V3(0.2737, 0.0000, 0.0000), half: V3(0.7446, 0.2620, 0.1795)),
-      Box(center: V3(0.2737, -0.3930, 0.0000), half: V3(0.2987, 0.7701, 0.2864)),
-      Box(center: V3(0.2737, -0.3930, -0.4296), half: V3(0.2949, 0.8435, 0.2539)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2942, 0.9218, 0.2053)),
+      Box(center: V3(0.0000, 1.4749, 0.0000), half: V3(0.1998, 0.2637, 0.7969)),
     ],
-    solution: Pose(1.3983, -0.3340, 0.0000),
+    solution: Pose(2.8908, -0.8606, 0.0000),
   ),
-  // #6  approach 0.024 · correlation 0.33
+  // #6  approach 0.016 · correlation 0.80
   Level(
     name: '6',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5862, 0.2901, 0.2186)),
-      Box(center: V3(0.0000, 0.0000, -0.3280), half: V3(0.3000, 0.8542, 0.2045)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2087, 0.6995, 0.1685)),
+      Box(center: V3(0.0000, 1.1192, 0.0000), half: V3(0.1904, 0.1909, 0.8483)),
     ],
-    solution: Pose(-1.1370, -0.1968, 0.0000),
+    solution: Pose(-1.7973, -0.3436, 0.0000),
   ),
-  // #7  approach 0.024 · correlation 0.55
+  // #7  approach 0.012 · correlation 0.50
   Level(
     name: '7',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2757, 0.5784, 0.2444)),
-      Box(center: V3(0.0000, 0.0000, 0.3666), half: V3(0.2635, 0.8938, 0.2843)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.6386, 0.2974, 0.2118)),
+      Box(center: V3(1.0217, 0.0000, 0.0000), half: V3(0.2413, 0.2623, 0.8173)),
     ],
-    solution: Pose(3.0192, 0.7985, 0.0000),
+    solution: Pose(-0.3938, -0.1037, 0.0000),
   ),
-  // #8  approach 0.020 · correlation 1.00
+  // #8  approach 0.008 · correlation 1.00
   Level(
     name: '8',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2825, 0.8301, 0.2937)),
-      Box(center: V3(0.4237, 0.0000, 0.0000), half: V3(0.6902, 0.2002, 0.2990)),
-      Box(center: V3(0.4237, 0.0000, -0.4485), half: V3(0.1769, 0.8812, 0.2546)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5326, 0.1902, 0.2346)),
+      Box(center: V3(0.8521, 0.0000, 0.0000), half: V3(0.2481, 0.2310, 0.5857)),
+      Box(center: V3(0.8521, 0.0000, 0.9371), half: V3(0.7228, 0.2082, 0.1709)),
     ],
-    solution: Pose(2.5407, 0.4928, 0.0000),
+    solution: Pose(2.9019, 0.2789, 0.0000),
   ),
-  // #9  approach 0.016 · correlation 0.29
+  // #9  approach 0.008 · correlation 0.67
   Level(
     name: '9',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2281, 0.5900, 0.1938)),
-      Box(center: V3(0.3421, 0.0000, 0.0000), half: V3(0.2751, 0.8543, 0.2176)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2441, 0.2660, 0.9456)),
+      Box(center: V3(0.0000, 0.0000, -1.5130), half: V3(0.2264, 0.7250, 0.1875)),
+      Box(center: V3(0.0000, -1.1599, -1.5130), half: V3(0.2692, 0.2757, 0.7475)),
+      Box(center: V3(0.0000, -1.1599, -2.7091), half: V3(0.5327, 0.1611, 0.2958)),
     ],
-    solution: Pose(-0.6705, 0.6942, 0.0000),
+    solution: Pose(-1.5672, 0.1955, 0.0000),
   ),
-  // #10  approach 0.008 · correlation 1.00
+  // #10  approach 0.008 · correlation 0.22
   Level(
     name: '10',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1775, 0.7171, 0.1861)),
-      Box(center: V3(-0.2662, 0.0000, 0.0000), half: V3(0.2371, 0.2577, 0.9230)),
-      Box(center: V3(-0.2662, 0.0000, 1.3845), half: V3(0.6043, 0.2978, 0.1716)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2752, 0.6838, 0.2387)),
+      Box(center: V3(0.0000, -1.0941, 0.0000), half: V3(0.7422, 0.1811, 0.1971)),
+      Box(center: V3(1.1875, -1.0941, 0.0000), half: V3(0.2417, 0.2000, 0.6883)),
     ],
-    solution: Pose(1.7507, 0.8138, 0.0000),
+    solution: Pose(2.7260, 0.0126, 0.0000),
   ),
-  // #11  approach 0.004 · correlation 0.25
+  // #11  approach 0.008 · correlation 0.40
   Level(
     name: '11',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5139, 0.2469, 0.2471)),
-      Box(center: V3(0.7708, 0.0000, 0.0000), half: V3(0.2261, 0.1763, 0.7473)),
-      Box(center: V3(0.7708, -0.2644, 0.0000), half: V3(0.5134, 0.1705, 0.2476)),
-      Box(center: V3(0.7708, -0.0087, 0.0000), half: V3(0.7287, 0.2296, 0.2158)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.8576, 0.1869, 0.2172)),
+      Box(center: V3(1.3722, 0.0000, 0.0000), half: V3(0.2585, 0.7483, 0.1611)),
     ],
-    solution: Pose(-0.4216, -1.1896, 0.0000),
+    solution: Pose(1.5399, 1.0972, 0.0000),
   ),
-  // #12  approach 0.004 · correlation 0.33
+  // #12  approach 0.004 · correlation 1.00
   Level(
     name: '12',
     hint: 'Drag to rotate.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2918, 0.2982, 0.7373)),
-      Box(center: V3(0.0000, 0.0000, 1.1060), half: V3(0.2011, 0.5267, 0.2120)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7057, 0.2375, 0.2854)),
+      Box(center: V3(-1.1292, 0.0000, 0.0000), half: V3(0.2092, 0.2671, 0.5037)),
+      Box(center: V3(-1.1292, 0.0000, 0.8060), half: V3(0.1610, 0.6292, 0.2092)),
+      Box(center: V3(-1.1292, 1.0068, 0.8060), half: V3(0.2596, 0.1931, 0.7579)),
     ],
-    solution: Pose(-0.2840, -1.0078, 0.0000),
+    solution: Pose(-0.2015, -1.1590, 0.0000),
   ),
-  // #13  approach 0.064 · correlation 0.84
+  // #13  approach 0.012 · correlation 0.60
   Level(
     name: '13',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2785, 0.8054, 0.2961)),
-      Box(center: V3(-0.4178, 0.0000, 0.0000), half: V3(0.5666, 0.2207, 0.2481), hinged: true),
-      Box(center: V3(-0.4178, 0.0000, -0.3721), half: V3(0.1612, 0.8652, 0.1987)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2086, 0.7133, 0.2706)),
+      Box(center: V3(0.0000, -1.1413, 0.0000), half: V3(0.2270, 0.1697, 0.9236), hinged: true),
     ],
-    solution: Pose(0.9491, 0.9095, 0.7903),
+    solution: Pose(1.9251, -0.3653, -0.2941),
   ),
-  // #14  approach 0.040 · correlation 0.50
+  // #14  approach 0.008 · correlation 1.00
   Level(
     name: '14',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5986, 0.2612, 0.2449)),
-      Box(center: V3(0.8979, 0.0000, 0.0000), half: V3(0.7954, 0.2543, 0.1622), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2960, 0.8356, 0.2584)),
+      Box(center: V3(0.0000, -1.3370, 0.0000), half: V3(0.2538, 0.2382, 0.8969), hinged: true),
     ],
-    solution: Pose(-3.0734, -0.4637, 0.0779),
+    solution: Pose(3.0699, -0.6570, 0.5758),
   ),
-  // #15  approach 0.036 · correlation 0.28
+  // #15  approach 0.004 · correlation 1.00
   Level(
     name: '15',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1705, 0.5295, 0.2814)),
-      Box(center: V3(-0.2558, 0.0000, 0.0000), half: V3(0.1810, 0.5449, 0.2765), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1626, 0.8454, 0.2416)),
+      Box(center: V3(0.0000, 1.3526, 0.0000), half: V3(0.5264, 0.2908, 0.2527), hinged: true),
     ],
-    solution: Pose(2.3522, -0.5646, -1.0536),
+    solution: Pose(-2.9342, -0.2459, -0.6184),
   ),
-  // #16  approach 0.028 · correlation 0.54
+  // #16  approach 0.004 · correlation 1.00
   Level(
     name: '16',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2820, 0.2656, 0.9221)),
-      Box(center: V3(0.0000, 0.3984, 0.0000), half: V3(0.7203, 0.2763, 0.2961), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.6385, 0.1730, 0.1749)),
+      Box(center: V3(1.0216, 0.0000, 0.0000), half: V3(0.2073, 0.2017, 0.5600), hinged: true),
+      Box(center: V3(1.0216, 0.0000, -0.8960), half: V3(0.1910, 0.6618, 0.2723)),
+      Box(center: V3(1.0216, 1.0590, -0.8960), half: V3(0.5912, 0.2728, 0.1649)),
     ],
-    solution: Pose(1.0037, -0.8195, -0.5400),
+    solution: Pose(0.1383, 0.0105, 0.4232),
   ),
-  // #17  approach 0.024 · correlation 1.00
+  // #17  approach 0.004 · correlation 1.00
   Level(
     name: '17',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.8016, 0.2718, 0.2234)),
-      Box(center: V3(0.0000, -0.4078, 0.0000), half: V3(0.2671, 0.5713, 0.2734), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1949, 0.2788, 0.6372)),
+      Box(center: V3(0.0000, 0.0000, -1.0195), half: V3(0.6893, 0.2312, 0.2955), hinged: true),
     ],
-    solution: Pose(3.1006, -1.1028, 0.1178),
+    solution: Pose(3.1208, 0.9432, -0.3017),
   ),
-  // #18  approach 0.020 · correlation 1.00
+  // #18  approach 0.004 · correlation 1.00
   Level(
     name: '18',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2624, 0.7368, 0.2651)),
-      Box(center: V3(0.3937, 0.0000, 0.0000), half: V3(0.8777, 0.2790, 0.2365), hinged: true),
-      Box(center: V3(0.3937, 0.0000, -0.3548), half: V3(0.2365, 0.2130, 0.9283)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2565, 0.2615, 0.6260)),
+      Box(center: V3(0.0000, 0.0000, -1.0016), half: V3(0.2733, 0.5857, 0.2681), hinged: true),
+      Box(center: V3(0.0000, -0.9371, -1.0016), half: V3(0.7502, 0.2472, 0.2917)),
     ],
-    solution: Pose(1.5120, 0.5257, -1.1390),
+    solution: Pose(2.0872, 0.6382, -0.2785),
   ),
-  // #19  approach 0.016 · correlation 0.36
+  // #19  approach 0.004 · correlation 0.50
   Level(
     name: '19',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2450, 0.6018, 0.1875)),
-      Box(center: V3(-0.3675, 0.0000, 0.0000), half: V3(0.5126, 0.2829, 0.2452), hinged: true),
-      Box(center: V3(-0.3675, 0.4243, 0.0000), half: V3(0.2857, 0.2516, 0.7102)),
-      Box(center: V3(-0.7961, 0.4243, 0.0000), half: V3(0.5564, 0.2244, 0.2182)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1678, 0.9457, 0.2868)),
+      Box(center: V3(0.0000, 1.5132, 0.0000), half: V3(0.2320, 0.2484, 0.6025), hinged: true),
     ],
-    solution: Pose(0.5767, 0.9826, -0.0198),
+    solution: Pose(-1.8952, -0.0811, 0.5354),
   ),
-  // #20  approach 0.012 · correlation 0.75
+  // #20  approach 0.004 · correlation 1.00
   Level(
     name: '20',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1637, 0.2293, 0.5167)),
-      Box(center: V3(0.2455, 0.0000, 0.0000), half: V3(0.2261, 0.6230, 0.1604), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7876, 0.2948, 0.2797)),
+      Box(center: V3(-1.2601, 0.0000, 0.0000), half: V3(0.2906, 0.2124, 0.6411), hinged: true),
     ],
-    solution: Pose(0.0789, -1.1202, 0.1351),
+    solution: Pose(-1.9703, 0.0665, 0.6707),
   ),
-  // #21  approach 0.008 · correlation 0.29
+  // #21  approach 0.004 · correlation 0.50
   Level(
     name: '21',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.8837, 0.2510, 0.1932)),
-      Box(center: V3(0.0000, 0.0000, -0.2898), half: V3(0.8176, 0.1614, 0.2756), hinged: true),
-      Box(center: V3(0.0000, 0.2421, -0.2898), half: V3(0.9471, 0.2416, 0.2650)),
-      Box(center: V3(0.0000, 0.6044, -0.2898), half: V3(0.2707, 0.8086, 0.2480)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2224, 0.5683, 0.1863)),
+      Box(center: V3(0.0000, 0.9093, 0.0000), half: V3(0.1654, 0.2817, 0.8142), hinged: true),
+      Box(center: V3(0.0000, 0.9093, 1.3027), half: V3(0.1712, 0.9241, 0.2705)),
     ],
-    solution: Pose(-2.1474, 0.4439, -1.1873),
+    solution: Pose(-1.6013, -0.4664, -1.0996),
   ),
-  // #22  approach 0.004 · correlation 0.17
+  // #22  approach 0.004 · correlation 1.00
   Level(
     name: '22',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2968, 0.2135, 0.8419)),
-      Box(center: V3(0.0000, 0.3202, 0.0000), half: V3(0.9399, 0.2541, 0.2531), hinged: true),
-      Box(center: V3(0.0000, -0.0610, 0.0000), half: V3(0.5131, 0.2509, 0.2235)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2442, 0.1878, 0.7021)),
+      Box(center: V3(0.0000, 0.0000, 1.1234), half: V3(0.2909, 0.6199, 0.1805), hinged: true),
     ],
-    solution: Pose(-1.9167, -0.9470, 1.1955),
+    solution: Pose(-2.4952, 0.9658, 0.9185),
   ),
-  // #23  approach 0.004 · correlation 0.50
+  // #23  approach 0.004 · correlation 1.00
   Level(
     name: '23',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7503, 0.1895, 0.2889)),
-      Box(center: V3(1.1255, 0.0000, 0.0000), half: V3(0.6082, 0.1832, 0.1709), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2317, 0.7171, 0.2318)),
+      Box(center: V3(0.0000, 1.1474, 0.0000), half: V3(0.1925, 0.1680, 0.5821), hinged: true),
     ],
-    solution: Pose(0.5780, 0.5032, 0.3808),
+    solution: Pose(-1.1899, -0.9860, 1.2837),
   ),
-  // #24  approach 0.004 · correlation 0.50
+  // #24  approach 0.004 · correlation 1.00
   Level(
     name: '24',
     hint: 'One arm folds.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1695, 0.7489, 0.2140)),
-      Box(center: V3(0.0000, 0.0000, 0.3210), half: V3(0.2556, 0.2615, 0.6412), hinged: true),
-      Box(center: V3(0.3834, 0.0000, 0.3210), half: V3(0.6222, 0.2290, 0.1807)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7540, 0.2861, 0.1715)),
+      Box(center: V3(1.2065, 0.0000, 0.0000), half: V3(0.2073, 0.2831, 0.6602), hinged: true),
+      Box(center: V3(1.2065, 0.0000, 1.0563), half: V3(0.2376, 0.7201, 0.2766)),
+      Box(center: V3(1.2065, 1.1522, 1.0563), half: V3(0.6037, 0.1960, 0.1703)),
     ],
-    solution: Pose(-1.6565, 0.6702, -0.1593),
+    solution: Pose(0.6199, -0.3797, 1.0481),
   ),
-  // #25  approach 0.048 · correlation 0.86
+  // #25  approach 0.008 · correlation 1.00
   Level(
     name: '25',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2172, 0.6627, 0.2543)),
-      Box(center: V3(0.0000, 0.9940, 0.0000), half: V3(0.2226, 0.1625, 0.5554), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2809, 0.1609, 0.5406)),
+      Box(center: V3(0.0000, 0.0000, -0.8649), half: V3(0.5391, 0.2592, 0.2327), hinged: true),
     ],
-    solution: Pose(-2.6703, -0.0047, -0.0738),
+    solution: Pose(0.6091, -0.6082, 0.0054),
   ),
-  // #26  approach 0.048 · correlation 0.71
+  // #26  approach 0.008 · correlation 0.50
   Level(
     name: '26',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1607, 0.2929, 0.7652)),
-      Box(center: V3(0.2410, 0.0000, 0.0000), half: V3(0.7366, 0.2516, 0.2092), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2909, 0.7050, 0.2473)),
+      Box(center: V3(0.0000, -1.1280, 0.0000), half: V3(0.2928, 0.2304, 0.7881), hinged: true),
     ],
-    solution: Pose(-2.0576, -0.0475, 1.1964),
+    solution: Pose(-2.6291, 0.1011, 0.9421),
   ),
-  // #27  approach 0.044 · correlation 0.34
+  // #27  approach 0.004 · correlation 1.00
   Level(
     name: '27',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2194, 0.6838, 0.1743)),
-      Box(center: V3(-0.3291, 0.0000, 0.0000), half: V3(0.1794, 0.2916, 0.7018), hinged: true),
-      Box(center: V3(-0.0600, 0.0000, 0.0000), half: V3(0.2797, 0.2886, 0.7430), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5897, 0.1887, 0.2558)),
+      Box(center: V3(0.9435, 0.0000, 0.0000), half: V3(0.1919, 0.1906, 0.7296), hinged: true),
     ],
-    solution: Pose(0.4508, -0.9508, -1.0708),
+    solution: Pose(-2.5029, 1.0199, 0.6142),
   ),
-  // #28  approach 0.020 · correlation 1.00
+  // #28  approach 0.004 · correlation 0.33
   Level(
     name: '28',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2583, 0.2451, 0.8069)),
-      Box(center: V3(0.3875, 0.0000, 0.0000), half: V3(0.5245, 0.2370, 0.2902), hinged: true),
-      Box(center: V3(0.3875, 0.0000, -0.4354), half: V3(0.5605, 0.2773, 0.2248), hinged: true),
-      Box(center: V3(0.3875, 0.4159, -0.4354), half: V3(0.1643, 0.2813, 0.8140)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2810, 0.8513, 0.2524)),
+      Box(center: V3(0.0000, 1.3620, 0.0000), half: V3(0.5425, 0.2790, 0.2522), hinged: true),
+      Box(center: V3(-0.8680, 1.3620, 0.0000), half: V3(0.1836, 0.2817, 0.5223), hinged: true),
     ],
-    solution: Pose(-1.5873, 0.0947, 0.6480),
+    solution: Pose(-0.5620, 0.3104, -0.5940),
   ),
-  // #29  approach 0.012 · correlation 0.60
+  // #29  approach 0.004 · correlation 1.00
   Level(
     name: '29',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2669, 0.5922, 0.2277)),
-      Box(center: V3(-0.4003, 0.0000, 0.0000), half: V3(0.2871, 0.2238, 0.6432), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7237, 0.1725, 0.1897)),
+      Box(center: V3(1.1579, 0.0000, 0.0000), half: V3(0.2764, 0.7423, 0.2858), hinged: true),
     ],
-    solution: Pose(3.0461, 0.0800, -0.1306),
+    solution: Pose(-0.7431, 0.9368, -0.6261),
   ),
-  // #30  approach 0.012 · correlation 1.00
+  // #30  approach 0.004 · correlation 1.00
   Level(
     name: '30',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2146, 0.6427, 0.1615)),
-      Box(center: V3(0.0000, 0.0000, 0.2422), half: V3(0.7601, 0.2742, 0.2108), hinged: true),
-      Box(center: V3(0.0000, 0.4113, 0.2422), half: V3(0.2160, 0.6023, 0.2269), hinged: true),
-      Box(center: V3(0.3239, 0.4113, 0.2422), half: V3(0.2748, 0.5242, 0.1829)),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.6637, 0.1832, 0.2534)),
+      Box(center: V3(1.0619, 0.0000, 0.0000), half: V3(0.2566, 0.9281, 0.2231), hinged: true),
+      Box(center: V3(1.0619, 1.4850, 0.0000), half: V3(0.2292, 0.2749, 0.6364), hinged: true),
     ],
-    solution: Pose(-0.0834, -1.0010, 0.3285),
+    solution: Pose(2.2349, -0.0251, 0.1043),
   ),
-  // #31  approach 0.012 · correlation 0.75
+  // #31  approach 0.004 · correlation 1.00
   Level(
     name: '31',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2956, 0.1948, 0.5131)),
-      Box(center: V3(0.0000, 0.0000, -0.7696), half: V3(0.2443, 0.8775, 0.2055), hinged: true),
-      Box(center: V3(0.0000, 0.0000, -1.0778), half: V3(0.2558, 0.7075, 0.1916), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.8738, 0.2398, 0.2285)),
+      Box(center: V3(1.3981, 0.0000, 0.0000), half: V3(0.1731, 0.6122, 0.2101), hinged: true),
     ],
-    solution: Pose(1.1036, -0.9366, 0.1336),
+    solution: Pose(1.9088, -0.6210, -1.2849),
   ),
-  // #32  approach 0.012 · correlation 0.75
+  // #32  approach 0.004 · correlation 1.00
   Level(
     name: '32',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2878, 0.2380, 0.6251)),
-      Box(center: V3(0.4317, 0.0000, 0.0000), half: V3(0.2936, 0.1982, 0.7665), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7800, 0.2543, 0.2295)),
+      Box(center: V3(-1.2480, 0.0000, 0.0000), half: V3(0.1896, 0.5535, 0.2058), hinged: true),
+      Box(center: V3(-1.2480, 0.8856, 0.0000), half: V3(0.6458, 0.1756, 0.2329), hinged: true),
+      Box(center: V3(-0.2147, 0.8856, 0.0000), half: V3(0.2340, 0.2570, 0.9470)),
     ],
-    solution: Pose(2.2779, -0.0893, 1.1789),
+    solution: Pose(2.8594, -1.0070, 0.6970),
   ),
-  // #33  approach 0.012 · correlation 0.60
+  // #33  approach 0.004 · correlation 1.00
   Level(
     name: '33',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2354, 0.5574, 0.2149)),
-      Box(center: V3(0.3531, 0.0000, 0.0000), half: V3(0.2266, 0.9182, 0.2587), hinged: true),
-      Box(center: V3(0.0133, 0.0000, 0.0000), half: V3(0.8202, 0.2950, 0.2788), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1737, 0.2614, 0.8149)),
+      Box(center: V3(0.0000, 0.0000, -1.3038), half: V3(0.5138, 0.1784, 0.1665), hinged: true),
     ],
-    solution: Pose(-0.1999, 0.8524, 0.6579),
+    solution: Pose(-0.1940, -0.1462, -0.7822),
   ),
-  // #34  approach 0.008 · correlation 0.50
+  // #34  approach 0.004 · correlation 0.50
   Level(
     name: '34',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7833, 0.2056, 0.1855)),
-      Box(center: V3(0.0000, 0.0000, -0.2783), half: V3(0.2161, 0.7400, 0.1959), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.8027, 0.2653, 0.2055)),
+      Box(center: V3(-1.2843, 0.0000, 0.0000), half: V3(0.1856, 0.5343, 0.2412), hinged: true),
     ],
-    solution: Pose(2.3768, -1.1787, 0.0912),
+    solution: Pose(2.4106, 0.6122, 0.7969),
   ),
-  // #35  approach 0.004 · correlation 0.50
+  // #35  approach 0.004 · correlation 1.00
   Level(
     name: '35',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2144, 0.5658, 0.2415)),
-      Box(center: V3(0.0000, -0.8487, 0.0000), half: V3(0.2350, 0.2687, 0.5910), hinged: true),
-      Box(center: V3(0.0000, -1.2518, 0.0000), half: V3(0.2650, 0.1762, 0.6732), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2359, 0.9244, 0.2492)),
+      Box(center: V3(0.0000, -1.4790, 0.0000), half: V3(0.8118, 0.2183, 0.1936), hinged: true),
     ],
-    solution: Pose(-1.6004, -0.9940, 0.1954),
+    solution: Pose(2.7980, 0.1297, -0.8978),
   ),
-  // #36  approach 0.004 · correlation 0.25
+  // #36  approach 0.004 · correlation 1.00
   Level(
     name: '36',
     hint: 'Two arms fold.',
     boxes: [
-      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.9342, 0.1689, 0.2708)),
-      Box(center: V3(0.0000, 0.2533, 0.0000), half: V3(0.6660, 0.2789, 0.2574), hinged: true),
-      Box(center: V3(-0.9989, 0.2533, 0.0000), half: V3(0.8487, 0.2930, 0.2239), hinged: true),
+      Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2184, 0.2249, 0.7910)),
+      Box(center: V3(0.0000, 0.0000, -1.2656), half: V3(0.6276, 0.2315, 0.2999), hinged: true),
+      Box(center: V3(-1.0041, 0.0000, -1.2656), half: V3(0.2975, 0.9022, 0.1901), hinged: true),
+      Box(center: V3(-1.0041, -1.4435, -1.2656), half: V3(0.1973, 0.2963, 0.6897)),
     ],
-    solution: Pose(3.1036, 0.4880, 1.1360),
+    solution: Pose(0.5832, -0.0006, 0.0232),
   ),
 ];
