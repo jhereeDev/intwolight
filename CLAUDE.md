@@ -1,4 +1,4 @@
-# TWO SUNS
+# IN TWO LIGHTS
 
 A wordless spatial-deduction puzzle game for iOS. An abstract sculpture of hinged low-poly boxes
 hangs in the corner where two perpendicular walls meet, lit by two sources. A level is solved when
@@ -6,7 +6,7 @@ hangs in the corner where two perpendicular walls meet, lit by two sources. A le
 shadow breaks the other, and that tension is the puzzle.
 
 Built by Jhere as a **RevenueCat Shipaton 2026** entry. Orchestrated from the AIOS at
-`jhere-dev/projects/two-suns/` — read `status.md` there before starting a session.
+`jhere-dev/projects/in-two-lights/` — read `status.md` there before starting a session.
 
 ## ⚠️ Read before running anything
 

@@ -9,14 +9,14 @@ import 'levels.g.dart';
 // numbers. The only question this build exists to answer is whether making one
 // shadow right actually breaks the other. None of this is the real interface.
 
-void main() => runApp(const TwoSunsApp());
+void main() => runApp(const InTwoLightsApp());
 
-class TwoSunsApp extends StatelessWidget {
-  const TwoSunsApp({super.key});
+class InTwoLightsApp extends StatelessWidget {
+  const InTwoLightsApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'TWO SUNS',
+        title: 'IN TWO LIGHTS',
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(useMaterial3: true),
         home: const GateScreen(),
@@ -49,7 +49,7 @@ class _GateScreenState extends State<GateScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('TWO SUNS · ${_index + 1}/${generatedLevels.length}'),
+        title: Text('IN TWO LIGHTS · ${_index + 1}/${generatedLevels.length}'),
         actions: [
           IconButton(
             onPressed: _index > 0 ? () => _load(_index - 1) : null,

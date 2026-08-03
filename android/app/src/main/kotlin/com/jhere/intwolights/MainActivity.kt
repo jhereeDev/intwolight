@@ -1,4 +1,4 @@
-package com.jhere.two_suns
+package com.jhere.intwolights
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,26 +1,45 @@
-# TWO SUNS — Handoff
+# IN TWO LIGHTS — Handoff
 
-**Written 2026-08-03, end of the first working session, on the `Jhere` PC.**
+**Written 2026-08-03, end of the first working session, on the LAPTOP (`LAPTOP-CHI3Q4MR`).**
 Read this before touching anything. It is the fastest way back into context.
+
+> **Corrected 2026-08-03 on the `Jhere` PC.** This file originally claimed it was written on
+> the PC and had the two machines' Flutter paths swapped — the exact trap the section below
+> exists to prevent, stated backwards. Everything M0 (the gate play-through, the Pixel 10 Pro
+> release run) happened **on the laptop**. Machine facts below are now verified per-machine.
 
 ---
 
 ## 🔴 Do this first, next session
 
-**1. App Store Connect → Agreements, Tax, and Banking → is *Paid Applications* ACTIVE?**
-(15 min. Unstarted all day.)
+> ### ⚠️ The old #1 here was wrong. Corrected 2026-08-03 against the official rules.
+>
+> This file previously said: *"Shipaton requires the RevenueCat SDK to power at least one real
+> in-app purchase. RevenueCat Ads does not satisfy it… no documented Flutter support. No agreement
+> → no IAP → no valid entry, for any app."* **Three errors.**
+>
+> 1. The rules say the app *"uses the RevenueCat SDK to power at least one in-app or web purchase,
+>    **or that serves ads through RevenueCat Ads**."* The ads path is named explicitly.
+> 2. RevenueCat's docs list **Flutter as supported** for ad monetization (`purchases_flutter`
+>    10.2.0+). It *is* beta — a real risk — but "no Flutter support" was false.
+> 3. The store requirement is *"Apple's App Store, **the Google Play Store**, or the Samsung Galaxy
+>    Store."* **Google Play alone is a valid entry. Apple is optional.**
+>
+> Net: the Apple Paid Applications agreement is **not** a blocker on entry validity. It only
+> gates App Store revenue. Source: <https://revenuecat-shipaton-2026.devpost.com/rules>
 
-Shipaton requires the RevenueCat SDK to power **at least one real in-app purchase**.
-RevenueCat Ads does not satisfy it — it is public beta, is a revenue-*tracking* layer
-rather than a purchase mechanism, and has no documented Flutter support.
-
-**No agreement → no IAP → no valid entry, for any app.** Every hour spent on levels,
-lighting or polish is conditional on this answer. One hour to find out the plan is dead
-beats forty.
-
-**2. Play generated levels 1, 6 and 12 and say whether difficulty actually rises.** (10 min.)
+**1. Play generated levels 1, 6 and 12 and say whether difficulty actually rises.** (10 min.)
 There is **no validated difficulty metric** — two were tried and both failed (see below).
 You are the only ground truth available, and this decides whether the curve needs work.
+Level 1 was played and solved on the PC 2026-08-03; 6 and 12 are still open.
+
+**2. Decide: Android-first, or also Apple?** Android-first drops the Paid Applications item
+entirely and reuses `flame-minis`' working Codemagic config. Apple can be added later.
+
+**3. Post build-in-public.** The #BuildInPublic award pays **$30k / $20k / $10k** — double Best
+Game — and its engagement window (**2026-07-31 → 09-30**) is already running. Tag `#Shipaton`
+and `#BuildInPublic`. Judged on *"sharing story creatively, engagement/feedback incorporation,
+lessons learned"* — so incorporating a reply beats broadcasting.
 
 ---
 
@@ -31,12 +50,28 @@ the corner where two perpendicular walls meet, lit by two sources. A level is so
 **both** cast shadows match their target silhouettes at once — adjusting the form to fix one
 shadow breaks the other, and that tension is the puzzle.
 
-**Shipaton 2026 entry.** Target: **Best Game Award** (primary) and **Design Award**
-(secondary) — the only two traction-free cash categories on the board. Submissions close
-**2026-09-30**.
+**Shipaton 2026 entry**, registered on Devpost as **In Two Lights** (renamed from "Two Suns"
+2026-08-03 — the old name read as sci-fi and misdescribed the game).
+
+Targets, corrected 2026-08-03 against the published prize table:
+
+| Category | 1st / 2nd / 3rd | Judged on |
+|---|---|---|
+| **#BuildInPublic** | **$30k / $20k / $10k** | story, feedback incorporation, lessons |
+| **Best Game** (primary build target) | $15k / $10k / $5k | gameplay engagement, unique experience/**progression**, monetization fit |
+| **Design** (secondary) | $15k / $10k / $5k | innovation, aesthetics/delight, **standout animations** |
+
+Submission window **2026-07-31 → 2026-09-30, 11:45 PM PDT**. Judging Oct 1–13; winners Oct 21.
+The first public release must fall inside that window.
+
+**Required at submission** (not just paperwork — these are build constraints):
+demo video **under 2 min** on YouTube/Vimeo · 1024×1024 icon · screenshot **1179×2556, no device
+frames** · public store URL · **a free trial or promo codes so judges can unlock paid content.**
+Non-US winners file a **W-8BEN**; the sponsor reserves the right to withhold — do not quote a net
+prize figure.
 
 Full reasoning, including the six candidates that were killed to get here, is in the AIOS at
-`jhere-dev/decisions/log.md` (2026-08-03) and `jhere-dev/projects/two-suns/`.
+`jhere-dev/decisions/log.md` (2026-08-03) and `jhere-dev/projects/in-two-lights/`.
 
 ---
 
@@ -51,7 +86,7 @@ Full reasoning, including the six candidates that were killed to get here, is in
 | Tests | ✅ **10 passing**, incl. all 36 verified solvable and none pre-solved |
 | `flutter analyze` | ✅ clean |
 | Verified running | ✅ Pixel 10 Pro emulator, release build |
-| **RevenueCat** | ❌ **not integrated** — M3, and blocked on the agreement above |
+| **RevenueCat** | ❌ **not integrated** — M3. *Not* blocked: purchase **or** RevenueCat Ads both qualify, and Google Play alone is a valid store |
 | **CI** | ❌ **none.** See "known debt" |
 | Design pass | ❌ M0 UI is deliberately ugly — three flat panels and two numbers |
 | Progression / stars / map | ❌ not started |
@@ -61,24 +96,62 @@ Full reasoning, including the six candidates that were killed to get here, is in
 ## Setting up on another machine
 
 ```bash
-git clone git@github.com-personal:jhereeDev/2sun.git two-suns
-cd two-suns
+# The SSH host alias differs per machine — plain git@github.com works on both.
+git clone git@github.com:jhereeDev/intwolight.git in-two-lights
+cd in-two-lights
 ```
+
+### Names and identifiers — renamed 2026-08-03
+
+The project was **"Two Suns" until 2026-08-03**. Nothing has shipped under the old name, so the
+rename is complete and free. Current identifiers:
+
+| Thing | Value |
+|---|---|
+| Display name | **In Two Lights** |
+| Dart package (`pubspec.yaml`) | `in_two_lights` |
+| Bundle / application ID, **both platforms** | `com.jhere.intwolights` |
+| Devpost entry | In Two Lights |
+
+⚠️ **The bundle ID was inconsistent before the rename** — Android used `com.jhere.two_suns`,
+iOS used `com.jhere.twoSuns`. They are now unified. Keep them identical: RevenueCat keys
+products per app per store, and a mismatch surfaces as missing entitlements at M3.
+
+**GitHub repo renamed** `2sun` → **`intwolight`** 2026-08-03; the `origin` remote on the PC was
+repointed the same day and verified reachable. GitHub redirects the old URL, so a stale clone
+still fetches — but repoint it anyway so the two machines agree.
+
+⚠️ **Note the spelling.** The repo is `intwolight` (**singular**), the bundle ID is
+`com.jhere.intwolights` (**plural**), and the display name is "In Two **Lights**". Harmless, but
+do not assume one from the other — copy the exact string from this table.
+
+⚠️ **Still carrying the old name:** both local directories are `two-suns`
+(`D:\Claude\two-suns`, `C:\coding_projects\personal\two-suns`). Purely cosmetic — but rename
+them on both machines together if at all, so the two don't diverge.
+
+**A bundle ID cannot be changed after a store release.** It is correct now; do not touch it again.
+
+### Where the clone lives, per machine
+
+| Machine | Repo path |
+|---|---|
+| `Jhere` PC (the D: rig) | **`D:\Claude\two-suns`** — cloned 2026-08-03 |
+| Laptop (`LAPTOP-CHI3Q4MR`) | `C:\coding_projects\personal\two-suns` |
 
 ### ⚠️ The trap: Flutter's location is machine-specific and it is NOT on PATH
 
-**Find it, do not assume it.**
+**Find it, do not assume it.** Both entries below are verified, not inferred:
 
 | Machine | Path |
 |---|---|
-| `Jhere` PC | `C:/flutter` |
-| Laptop (per `flame-minis/CLAUDE.md`) | `D:\flutter` — **verify, that note may be stale** |
+| `Jhere` PC | **`D:/flutter`** — `C:/flutter` does not exist on this rig |
+| Laptop (`LAPTOP-CHI3Q4MR`) | `C:\flutter` — laptop has **only a C: drive** |
 
 ```bash
-# Git Bash
-export PATH="/c/flutter/bin:$PATH"
-# PowerShell
-$env:PATH = "C:\flutter\bin;$env:PATH"
+# Git Bash — on the Jhere PC
+export PATH="/d/flutter/bin:$PATH"
+# PowerShell — on the Jhere PC
+$env:PATH = "D:\flutter\bin;$env:PATH"
 ```
 
 Required toolchain: **Flutter 3.44.8 · Dart 3.12.2 · stable.** Check with `flutter --version`
@@ -97,10 +170,17 @@ If those three pass, the checkout is good.
 
 ### Running it
 
+**AVDs are per-machine too — there is no shared emulator name.** Verified 2026-08-03:
+
+| Machine | AVDs | Use |
+|---|---|---|
+| `Jhere` PC | `Medium_Phone_API_36.0` (Android 16, API 36), `Pixel_4a` | **`Medium_Phone_API_36.0`** — the adopted default on this rig |
+| Laptop | `Pixel_10_Pro` | what M0 was gate-tested on |
+
 ```bash
 flutter devices
-flutter emulators                              # a Pixel_10_Pro AVD exists on the PC
-flutter emulators --launch Pixel_10_Pro        # laptop may need one created
+flutter emulators
+flutter emulators --launch Medium_Phone_API_36.0   # on the Jhere PC
 flutter run -d emulator-5554 --release
 ```
 

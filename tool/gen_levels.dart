@@ -7,8 +7,8 @@
 // the expensive curation cost once, and emits a plain readable Dart file.
 import 'dart:io';
 
-import 'package:two_suns/generator.dart';
-import 'package:two_suns/geom.dart';
+import 'package:in_two_lights/generator.dart';
+import 'package:in_two_lights/geom.dart';
 
 const _chapters = [
   (seed: 1101, wanted: 12, hinges: 0, hint: 'Drag to rotate.'),

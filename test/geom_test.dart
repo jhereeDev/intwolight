@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:two_suns/geom.dart';
-import 'package:two_suns/level.dart';
-import 'package:two_suns/levels.g.dart';
+import 'package:in_two_lights/geom.dart';
+import 'package:in_two_lights/level.dart';
+import 'package:in_two_lights/levels.g.dart';
 
 void main() {
   test('hull drops interior points and keeps the corners', () {

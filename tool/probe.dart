@@ -4,7 +4,7 @@
 // solved itself in seconds, level 3 took real reasoning.
 import 'dart:math' as math;
 
-import 'package:two_suns/level.dart';
+import 'package:in_two_lights/level.dart';
 
 /// Climb from a random start toward whichever step most improves the weaker
 /// wall. Roughly what a player does: push the shadow that is furthest off and
