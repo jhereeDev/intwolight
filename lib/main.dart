@@ -1,13 +1,12 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'geom.dart';
 import 'level.dart';
 import 'levels.g.dart';
-
-// M0 — the kill gate. Deliberately ugly: three flat panels, a slider, and two
-// numbers. The only question this build exists to answer is whether making one
-// shadow right actually breaks the other. None of this is the real interface.
+import 'scene.dart';
 
 void main() => runApp(const InTwoLightsApp());
 
@@ -18,157 +17,277 @@ class InTwoLightsApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         title: 'IN TWO LIGHTS',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(useMaterial3: true),
-        home: const GateScreen(),
+        theme: ThemeData.dark(useMaterial3: true).copyWith(
+          scaffoldBackgroundColor: const Color(0xFF08080A),
+        ),
+        home: const PlayScreen(),
       );
 }
 
-class GateScreen extends StatefulWidget {
-  const GateScreen({super.key});
+class PlayScreen extends StatefulWidget {
+  const PlayScreen({super.key});
 
   @override
-  State<GateScreen> createState() => _GateScreenState();
+  State<PlayScreen> createState() => _PlayScreenState();
 }
 
-class _GateScreenState extends State<GateScreen> {
+class _PlayScreenState extends State<PlayScreen>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
   Pose _pose = const Pose(0, 0, 0);
   late LevelRuntime _rt = LevelRuntime(generatedLevels[0]);
+
+  /// Eases the whole scene between "cold" and "lit" so solving is a moment
+  /// rather than a state flip.
+  late final AnimationController _glow = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 620),
+  )..addListener(() => setState(() {}));
+
+  bool _wasSolved = false;
+
+  /// The wordless teach: a ghost hand that drifts until the player drags.
+  bool _touched = false;
+
+  // Fixed so dust doesn't reshuffle every frame.
+  late final List<Offset> _motes = [
+    for (var i = 0; i < 26; i++)
+      Offset(_rand(i * 2) * 0.9 + 0.05, _rand(i * 2 + 1) * 0.7 + 0.12),
+  ];
+
+  static double _rand(int i) {
+    final x = math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    return x - x.floorToDouble();
+  }
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
 
   void _load(int i) => setState(() {
         _index = i.clamp(0, generatedLevels.length - 1);
         _rt = LevelRuntime(generatedLevels[_index]);
         _pose = const Pose(0, 0, 0);
+        _wasSolved = false;
+        _glow.value = 0;
       });
+
+  void _apply(Pose p) {
+    final score = _rt.score(p);
+    if (score.solved && !_wasSolved) {
+      _wasSolved = true;
+      HapticFeedback.mediumImpact();
+      _glow.forward();
+    } else if (!score.solved && _wasSolved) {
+      _wasSolved = false;
+      _glow.reverse();
+    }
+    setState(() => _pose = p);
+  }
 
   @override
   Widget build(BuildContext context) {
     final lv = generatedLevels[_index];
     final world = worldCorners(lv, _pose);
     final score = _rt.score(_pose);
+    final g = Curves.easeOutCubic.transform(_glow.value);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('IN TWO LIGHTS · ${_index + 1}/${generatedLevels.length}'),
-        actions: [
-          IconButton(
-            onPressed: _index > 0 ? () => _load(_index - 1) : null,
-            icon: const Icon(Icons.chevron_left),
-          ),
-          IconButton(
-            onPressed: _index < generatedLevels.length - 1
-                ? () => _load(_index + 1)
-                : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(lv.hint,
-                style: const TextStyle(color: Colors.white38, fontSize: 12)),
-          ),
-          Expanded(
-            flex: 3,
-            child: GestureDetector(
-              onPanUpdate: (d) => setState(() => _pose = Pose(
-                    _pose.yaw + d.delta.dx * 0.012,
-                    (_pose.pitch + d.delta.dy * 0.012).clamp(-1.4, 1.4),
-                    _pose.hinge,
-                  )),
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: SolidPainter(world),
-                child: const Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 4),
-                    child: Text('drag to rotate',
-                        style: TextStyle(color: Colors.white24, fontSize: 10)),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (_) {
+                  if (!_touched) setState(() => _touched = true);
+                },
+                onPanUpdate: (d) => _apply(Pose(
+                  _pose.yaw + d.delta.dx * 0.012,
+                  (_pose.pitch + d.delta.dy * 0.012).clamp(-1.4, 1.4),
+                  _pose.hinge,
+                )),
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: CornerScenePainter(
+                    world: world,
+                    targetsA: _rt.targetHullsA(),
+                    targetsB: _rt.targetHullsB(),
+                    castA: shadows(world, toWallA),
+                    castB: shadows(world, toWallB),
+                    hitA: score.a >= kSolveThreshold,
+                    hitB: score.b >= kSolveThreshold,
+                    glow: g,
+                    motes: _motes,
                   ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _WallPanel(
-                    label: 'LEFT WALL',
-                    value: score.a,
-                    target: _rt.targetHullsA(),
-                    current: shadows(world, toWallA),
-                  ),
-                ),
-                Expanded(
-                  child: _WallPanel(
-                    label: 'BACK WALL',
-                    value: score.b,
-                    target: _rt.targetHullsB(),
-                    current: shadows(world, toWallB),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (lv.hasHinge)
-            Slider(
-              value: _pose.hinge,
-              min: -1.6,
-              max: 1.6,
-              onChanged: (v) =>
-                  setState(() => _pose = Pose(_pose.yaw, _pose.pitch, v)),
-            ),
-          Container(
-            width: double.infinity,
-            color: score.solved ? Colors.amber : Colors.transparent,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              score.solved ? 'SOLVED' : 'keep going',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: score.solved ? Colors.black : Colors.white24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+
+            // Wordless teach — a drifting hand, gone the instant you drag.
+            if (!_touched)
+              const Positioned.fill(
+                child: IgnorePointer(child: _DragHint()),
               ),
+
+            _Hud(
+              index: _index,
+              total: generatedLevels.length,
+              a: score.a,
+              b: score.b,
+              glow: g,
+              hinge: lv.hasHinge ? _pose.hinge : null,
+              onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
+              onPrev: _index > 0 ? () => _load(_index - 1) : null,
+              onNext: _index < generatedLevels.length - 1
+                  ? () => _load(_index + 1)
+                  : null,
+              onReset: () => _apply(const Pose(0, 0, 0)),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _WallPanel extends StatelessWidget {
-  const _WallPanel({
-    required this.label,
-    required this.value,
-    required this.target,
-    required this.current,
+/// Two arcs and a dot, drifting left-right. Teaches "drag to rotate" without
+/// a word, a modal, or a Skip button — the game is wordless, the tutorial is too.
+class _DragHint extends StatefulWidget {
+  const _DragHint();
+
+  @override
+  State<_DragHint> createState() => _DragHintState();
+}
+
+class _DragHintState extends State<_DragHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2600),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _c,
+        builder: (_, _) => CustomPaint(
+          size: Size.infinite,
+          painter: _DragHintPainter(_c.value),
+        ),
+      );
+}
+
+class _DragHintPainter extends CustomPainter {
+  _DragHintPainter(this.t);
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // One sweep out and back, with a pause at each end.
+    final phase = math.sin(t * 2 * math.pi);
+    final fade = (math.sin(t * 2 * math.pi * 2).abs() * 0.35 + 0.45)
+        .clamp(0.0, 1.0);
+
+    final cx = size.width / 2 + phase * size.width * 0.16;
+    final cy = size.height * 0.72;
+
+    canvas.drawCircle(
+      Offset(cx, cy),
+      13,
+      Paint()..color = Colors.white.withValues(alpha: 0.10 * fade),
+    );
+    canvas.drawCircle(
+      Offset(cx, cy),
+      5,
+      Paint()..color = Colors.white.withValues(alpha: 0.55 * fade),
+    );
+
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..color = Colors.white.withValues(alpha: 0.14);
+    canvas.drawLine(Offset(size.width * 0.34, cy),
+        Offset(size.width * 0.66, cy), track);
+  }
+
+  @override
+  bool shouldRepaint(_DragHintPainter old) => old.t != t;
+}
+
+/// Level number, the two wall readouts, and nav. Deliberately quiet — the
+/// scene is the interface.
+class _Hud extends StatelessWidget {
+  const _Hud({
+    required this.index,
+    required this.total,
+    required this.a,
+    required this.b,
+    required this.glow,
+    required this.hinge,
+    required this.onHinge,
+    required this.onPrev,
+    required this.onNext,
+    required this.onReset,
   });
 
-  final String label;
-  final double value;
-  final List<List<V2>> target, current;
+  final int index, total;
+  final double a, b, glow;
+
+  /// null when the level has no joint — the control simply isn't there.
+  final double? hinge;
+  final ValueChanged<double> onHinge;
+  final VoidCallback? onPrev, onNext, onReset;
 
   @override
   Widget build(BuildContext context) {
-    final hit = value >= kSolveThreshold;
     return Column(
       children: [
-        Text('$label  ${(value * 100).toStringAsFixed(0)}%',
-            style: TextStyle(
-                fontSize: 11,
-                color: hit ? Colors.amber : Colors.white38,
-                letterSpacing: 1)),
-        Expanded(
-          child: CustomPaint(
-            size: Size.infinite,
-            painter: ShadowPainter(target: target, current: current, hit: hit),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 10, 8, 0),
+          child: Row(
+            children: [
+              Text(
+                '${index + 1}'.padLeft(2, '0'),
+                style: TextStyle(
+                  fontSize: 13,
+                  letterSpacing: 4,
+                  color: Color.lerp(
+                      Colors.white38, const Color(0xFFE0A82E), glow),
+                ),
+              ),
+              Text(
+                ' / $total',
+                style: const TextStyle(
+                    fontSize: 13, letterSpacing: 2, color: Colors.white24),
+              ),
+              const Spacer(),
+              _GhostButton(icon: Icons.refresh_rounded, onTap: onReset),
+              _GhostButton(icon: Icons.chevron_left_rounded, onTap: onPrev),
+              _GhostButton(icon: Icons.chevron_right_rounded, onTap: onNext),
+            ],
+          ),
+        ),
+        const Spacer(),
+        if (hinge != null)
+          _HingeDial(value: hinge!, onChanged: onHinge),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 22, top: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _Meter(value: a),
+              const SizedBox(width: 26),
+              _Meter(value: b),
+            ],
           ),
         ),
       ],
@@ -176,105 +295,76 @@ class _WallPanel extends StatelessWidget {
   }
 }
 
-/// Isometric view of the solid: cull back faces, sort far-to-near, flat shade.
-/// Correct at the 2–3 boxes these levels use; do not generalise it.
-class SolidPainter extends CustomPainter {
-  SolidPainter(this.world);
-  final List<List<V3>> world;
-
-  static const _view = V3(0.577, 0.577, 0.577);
-
-  Offset _project(V3 v, Size s, double k) => Offset(
-        s.width / 2 + (v.x - v.z) * 0.866 * k,
-        s.height / 2 + (-v.y + (v.x + v.z) * 0.5) * k,
-      );
+/// A bar, not a number. The player needs "how close", not two decimal places.
+class _Meter extends StatelessWidget {
+  const _Meter({required this.value});
+  final double value;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final k = math.min(size.width, size.height) / 5.0;
-    final faces = <({double depth, Path path, double shade})>[];
-
-    for (final corners in world) {
-      for (final f in Box.faces) {
-        final a = corners[f[0]], b = corners[f[1]], c = corners[f[2]];
-        final n = (b - a).cross(c - a);
-        final lit = n.dot(_view);
-        if (lit <= 0) continue; // back face
-
-        final len = math.sqrt(n.dot(n));
-        final shade = len == 0 ? 0.0 : (lit / len).clamp(0.0, 1.0);
-
-        final path = Path();
-        for (var i = 0; i < f.length; i++) {
-          final p = _project(corners[f[i]], size, k);
-          i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
-        }
-        path.close();
-
-        var d = 0.0;
-        for (final i in f) {
-          d += corners[i].dot(_view);
-        }
-        faces.add((depth: d / f.length, path: path, shade: shade));
-      }
-    }
-
-    faces.sort((x, y) => x.depth.compareTo(y.depth)); // far first
-    final edge = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
-      ..color = const Color(0xFF0C0E14);
-    for (final f in faces) {
-      canvas.drawPath(
-          f.path,
-          Paint()
-            ..color = Color.lerp(
-                const Color(0xFF1D2230), const Color(0xFFE8E4DA), f.shade)!);
-      canvas.drawPath(f.path, edge);
-    }
+  Widget build(BuildContext context) {
+    final hit = value >= kSolveThreshold;
+    // Rescale so the visible travel lives where the puzzle actually is.
+    final t = ((value - 0.35) / (1 - 0.35)).clamp(0.0, 1.0);
+    return SizedBox(
+      width: 74,
+      height: 3,
+      child: Stack(
+        children: [
+          Container(color: Colors.white.withValues(alpha: 0.08)),
+          FractionallySizedBox(
+            widthFactor: t,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              color: hit
+                  ? const Color(0xFFE0A82E)
+                  : Colors.white.withValues(alpha: 0.32),
+            ),
+          ),
+        ],
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(SolidPainter old) => true;
 }
 
-class ShadowPainter extends CustomPainter {
-  ShadowPainter(
-      {required this.target, required this.current, required this.hit});
-  final List<List<V2>> target, current;
-  final bool hit;
-
-  Path _path(List<V2> hull, Size s, double k) {
-    final p = Path();
-    for (var i = 0; i < hull.length; i++) {
-      final x = s.width / 2 + hull[i].x * k;
-      final y = s.height / 2 - hull[i].y * k;
-      i == 0 ? p.moveTo(x, y) : p.lineTo(x, y);
-    }
-    return p..close();
-  }
+class _GhostButton extends StatelessWidget {
+  const _GhostButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback? onTap;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final k = math.min(size.width, size.height) / 4.4;
+  Widget build(BuildContext context) => IconButton(
+        onPressed: onTap,
+        icon: Icon(icon, size: 20),
+        color: Colors.white38,
+        disabledColor: Colors.white10,
+        splashRadius: 20,
+      );
+}
 
-    final outline = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..color = Colors.white24;
-    for (final h in target) {
-      if (h.length >= 3) canvas.drawPath(_path(h, size, k), outline);
-    }
-
-    final fill = Paint()
-      ..color = hit
-          ? Colors.amber.withValues(alpha: 0.55)
-          : Colors.white.withValues(alpha: 0.28);
-    for (final h in current) {
-      if (h.length >= 3) canvas.drawPath(_path(h, size, k), fill);
-    }
-  }
+/// The hinge, restyled off Material's default Slider.
+class _HingeDial extends StatelessWidget {
+  const _HingeDial({required this.value, required this.onChanged});
+  final double value;
+  final ValueChanged<double> onChanged;
 
   @override
-  bool shouldRepaint(ShadowPainter old) => true;
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 46),
+        child: SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 2,
+            activeTrackColor: Colors.white24,
+            inactiveTrackColor: Colors.white10,
+            thumbColor: const Color(0xFFE0A82E),
+            overlayColor: const Color(0x22E0A82E),
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+          ),
+          child: Slider(
+            value: value,
+            min: -1.6,
+            max: 1.6,
+            onChanged: onChanged,
+          ),
+        ),
+      );
 }
