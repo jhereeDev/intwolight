@@ -1,5 +1,92 @@
 # IN TWO LIGHTS — Handoff
 
+# ▶ RESUME HERE — written 2026-08-04 on the `Jhere` PC, for the LAPTOP
+
+**One thing blocks TestFlight, and it may be sitting on the laptop you are reading this on.**
+
+Everything else is done: the app, the Apple account, the App Store Connect record, Codemagic, the
+icon, the store screenshots and the privacy policy. Two iOS builds have run. Both reached
+`Fetch or create signing files` and died there. **Nothing else has ever failed** — dependencies,
+`flutter analyze` and all 25 tests pass on the Mac every run.
+
+## 🔴 FIRST ACTION ON THIS LAPTOP: look for the iOS signing private key
+
+Search for a PEM block beginning `-----BEGIN RSA PRIVATE KEY-----` or `-----BEGIN PRIVATE KEY-----`.
+Likely spots: `Documents`, `Downloads`, `.ssh`, wherever sarimanok was first set up, or a password
+manager.
+
+```powershell
+Get-ChildItem -Path $HOME -Recurse -Include *.pem,*.key -ErrorAction SilentlyContinue |
+  Select-String -Pattern "BEGIN.*PRIVATE KEY" -List | Select-Object Path
+```
+
+**Why this laptop:** sarimanok's Codemagic variable `CERTIFICATE_PRIVATE_KEY` (value hash
+`777022fb`) matches Apple Distribution certificate **`6LC4NXABB5`**, and Codemagic will not show a
+secret back. If a readable copy of that key exists anywhere, it is most likely here — this is
+where sarimanok was first signed. It is not on the PC; that was searched.
+
+**If you find it:** Codemagic → app `intwolight` → Environment variables → set
+`CERTIFICATE_PRIVATE_KEY`, group `intwolights_ios`, Secret ✅ (replace the current value). Then run
+the `In Two Lights → TestFlight` workflow. Signing will find the existing certificate, skip
+creation entirely, and nothing else in the account is touched.
+
+## The problem in one table
+
+Apple caps Apple Distribution certificates at 3. There are 3, and **each is in active use by a
+different app** — read from each app's own build log, not assumed:
+
+| App | key hash | Certificate | Store status |
+|---|---|---|---|
+| sarimanok | `777022fb` | `6LC4NXABB5` (exp 2027-07-31) | Waiting for Review |
+| kalyedex | `f03e2806` | 07-23 or 07-28 | Prepare for Submission |
+| reset | `7f46295e` | the other | Waiting for Review |
+| **In Two Lights** | fresh key (below) | **none — needs a 4th** | never built |
+
+**Root cause is a habit, not a bug: one Apple Distribution certificate can sign ALL your apps.**
+Each Codemagic app generated its own key, so each minted its own certificate, and the cap was hit
+at the fourth app. Generating yet another fresh key for In Two Lights repeated the mistake instead
+of fixing it.
+
+## ⚠️ Machine-specific: the fresh key exists on the PC ONLY
+
+`C:\Users\jhere\Documents\intwolights-CERTIFICATE_PRIVATE_KEY.pem` — **on the `Jhere` PC, not on
+this laptop.** It is also stored inside Codemagic as `intwolight`'s `CERTIFICATE_PRIVATE_KEY`, but
+Codemagic never reveals a secret, so **that PC file is the only readable copy that exists.**
+If the fallback below is used, copy it across first. If that file is lost, the fallback gets worse.
+
+## Fallback, if sarimanok's key cannot be found
+
+Consolidate onto one certificate, touching only the app that is NOT in review:
+
+1. Revoke **kalyedex's** certificate. It is *Prepare for Submission* — not in review, not live.
+   Leave sarimanok's and reset's alone; both are Waiting for Review.
+2. Run the In Two Lights build. It mints one certificate bound to the fresh key.
+3. Put that same fresh key on kalyedex so it shares the new certificate.
+
+Result: 3 certificates, 4 apps, nothing in review disturbed. Later, when sarimanok and reset clear
+review, migrate them onto the same key and drop to one certificate with two spare slots.
+
+Revoking is irreversible and touches a shipping app. Decide deliberately.
+
+## Everything already wired (do not redo)
+
+| | |
+|---|---|
+| Apple Team | `A23ZGW4Y37` |
+| App ID | `com.jhere.intwolights` (`HKF44N9DFA`) — registered |
+| App Store Connect | **In Two Lights**, Apple ID `6797556691`, SKU `intwolights-ios-001` |
+| Agreements | Free Apps **Active**. Paid Apps **Pending User Info** — needs bank account + U.S. tax form. **Not needed for TestFlight** |
+| Codemagic | app `intwolight`, on `codemagic.yaml`, integration `asc-key` (`FGDYK5MTLK`) |
+| Devpost | entry `1123433-in-two-lights` — story, tags, 2 images, thumbnail done. Needs demo video + store URL |
+| Privacy policy | `docs/privacy.html` — **enable GitHub Pages** (Settings → Pages → main `/docs`) |
+| Store assets | `press/store/` 1320×2868 ×4 · `press/devpost/` 1179×2556 ×4 · `press/icon-1024.png` |
+| Android keystore | `C:\Users\jhere\Documents\reset-signing-backup.zip` (PC only) — for `android-release` later |
+
+⚠️ **Codemagic does not fire on tag pushes** — the `ios-v0.1` tag pushed and nothing happened.
+Builds have all been started manually from the UI. The `triggering:` block is currently decorative.
+
+---
+
 **Written 2026-08-03, end of the first working session, on the LAPTOP (`LAPTOP-CHI3Q4MR`).**
 Read this before touching anything. It is the fastest way back into context.
 
