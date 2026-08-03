@@ -119,7 +119,8 @@ class Store extends ChangeNotifier {
     if (_package == null) return false;
     _lastError = null;
     try {
-      final result = await Purchases.purchasePackage(_package!);
+      final result =
+          await Purchases.purchase(PurchaseParams.package(_package!));
       _apply(result.customerInfo);
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
