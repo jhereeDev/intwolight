@@ -35,9 +35,14 @@ Level 1 was played and solved on the PC 2026-08-03; 6 and 12 are still open.
 
 **2. ✅ DECIDED 2026-08-03 — APPLE FIRST.** Three consequences, all now live:
 
-- 🔴 **The Paid Applications agreement is back on the critical path.** It is optional only if you
-  ship Android; it is *required* for any App Store IAP. App Store Connect → Agreements, Tax, and
-  Banking. 15 minutes, and M3 cannot complete without it.
+- 🔴 **Paid Applications — checked in the account 2026-08-03, and it is NOT "unstarted".**
+  Free Apps Agreement is **Active** (Jul 23 2026 → May 17 2027). Paid Apps Agreement is
+  **"Pending User Info"** — already accepted, waiting on two things that were never supplied:
+  **no bank account** and the **U.S. Tax Questionnaire shows "Missing Tax Info"**.
+  So this is not a 15-minute click; it needs PH bank details and a tax form (W-8BEN territory),
+  and only Jhere can enter them.
+  **Crucially: TestFlight does not need any of it.** Free Apps Active is sufficient to upload and
+  test. Only real IAP revenue is blocked.
 - **iOS cannot be built on either machine.** Xcode is macOS-only and neither the PC nor the laptop
   is a Mac, so `codemagic.yaml` (ported from sarimanok, at the repo root) is not a convenience —
   it is the only route to the App Store.
@@ -124,6 +129,15 @@ rename is complete and free. Current identifiers:
 | Dart package (`pubspec.yaml`) | `in_two_lights` |
 | Bundle / application ID, **both platforms** | `com.jhere.intwolights` |
 | Devpost entry | In Two Lights |
+| Apple Team ID | `A23ZGW4Y37` |
+| App Store Connect Apple ID | `6797556691` |
+| ASC SKU | `intwolights-ios-001` |
+| Privacy policy URL | `https://jhereedev.github.io/intwolight/privacy.html` (needs Pages enabled) |
+
+**Registered 2026-08-03 in the real Apple account:** the App ID
+`com.jhere.intwolights` exists in Certificates/Identifiers, and the App Store Connect record
+exists with the name **In Two Lights** — which also settles name availability, since App Store
+Connect rejects a name already taken.
 
 ⚠️ **The bundle ID was inconsistent before the rename** — Android used `com.jhere.two_suns`,
 iOS used `com.jhere.twoSuns`. They are now unified. Keep them identical: RevenueCat keys
