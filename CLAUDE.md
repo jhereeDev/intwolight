@@ -10,15 +10,20 @@ Built by Jhere as a **RevenueCat Shipaton 2026** entry. Orchestrated from the AI
 
 ## ⚠️ Read before running anything
 
-**Flutter is at `C:/flutter` on this machine and is NOT on PATH.**
+📄 **New machine, or coming back after a gap? Read [`HANDOFF.md`](HANDOFF.md) first.** It carries
+setup, the open blockers, and the dead ends worth not re-deriving.
+
+**Flutter is NOT on PATH, and its location differs per machine — find it, don't assume it.**
+`C:/flutter` on the `Jhere` PC; `flame-minis/CLAUDE.md` claims `D:\flutter` on the laptop, which
+may be stale. **Never hardcode either one.**
 
 ```bash
-export PATH="/c/flutter/bin:$PATH"      # Git Bash
-$env:PATH = "C:\flutter\bin;$env:PATH"   # PowerShell
+export PATH="/c/flutter/bin:$PATH"       # Git Bash — adjust the drive
+$env:PATH = "C:\flutter\bin;$env:PATH"    # PowerShell
 ```
 
-Flutter **3.44.8** · Dart **3.12.2** · stable. Never hardcode a Flutter path — the other machine
-has it on `D:`.
+Required: **Flutter 3.44.8 · Dart 3.12.2 · stable.** Check `flutter --version` before debugging
+anything — a version mismatch is the likeliest cause of a mystery build failure.
 
 ## Stack
 
