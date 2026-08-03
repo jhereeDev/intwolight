@@ -63,29 +63,25 @@ workflows:
       # has no ad SDK, so that specific reason does not apply — `latest` is kept
       # only so the image is not whatever happens to be default that month.
       xcode: latest
-      # ⚠️ NO variable group yet — and referencing one that does not exist is
-      # itself a config error, so it is commented out rather than left dangling.
+      # ⚠️ CERTIFICATE_PRIVATE_KEY is MANDATORY — verified on build #1,
+      # 2026-08-04, which died in under a second with:
+      #     "Cannot save Signing Certificates without certificate private key"
       #
-      # Codemagic variable groups are app-scoped. Checked 2026-08-03: this
-      # app has no variables, account globals are empty (and are being removed
-      # from personal accounts), and no certificate is shared at account level
-      # — so the sarimanok group is NOT reachable from here.
+      # `fetch-signing-files --create` does NOT mint its own key. Running
+      # without the group does not degrade gracefully, it just fails. (It also
+      # consumed no certificate slot, so a red build here is free.)
       #
-      # Without CERTIFICATE_PRIVATE_KEY, `fetch-signing-files --create`
-      # generates a fresh key and certificate on every run. That works, but it
-      # BURNS AN APPLE CERTIFICATE SLOT EACH BUILD. The account currently holds
-      # 1 of a possible 3 iOS Distribution certificates, so there is runway for
-      # about two builds before Apple refuses.
+      # The group must live ON THIS APP: Codemagic variable groups are
+      # app-scoped, account globals are empty and being removed from personal
+      # accounts, and no certificate is shared at account level — so the
+      # sarimanok group is not reachable from here.
       #
-      # The durable fix is to add CERTIFICATE_PRIVATE_KEY as a secret in a
-      # group on THIS app and re-enable the two lines below; the certificate
-      # then binds to that key and is reused forever.
-      #
-      # NOTE the separate caps: "Apple Distribution" (3, currently full) and
-      # "iOS Distribution" (3, currently 1 used) are DIFFERENT types. An
-      # earlier reading of this as one full pool was wrong.
-      # groups:
-      #   - intwolights_ios
+      # Certificate caps are per TYPE, and the two are separate:
+      #   Apple Distribution ("Distribution / All")  3 of 3 — FULL
+      #   iOS Distribution                           1 of 3 — room
+      # IOS_APP_STORE profiles use iOS Distribution, so there is headroom.
+      groups:
+        - intwolights_ios
       vars:
         BUNDLE_ID: com.jhere.intwolights
     triggering:
