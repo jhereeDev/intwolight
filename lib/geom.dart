@@ -111,6 +111,57 @@ Mask rasterize(List<List<V2>> hulls, {double half = 2.0, int n = 64}) {
   return m;
 }
 
+/// Union of projected triangles into an occupancy grid.
+///
+/// Replaces hull rasterisation for real meshes: the silhouette of a concave
+/// shape is the union of its projected faces, which a convex hull would
+/// over-cover — a rabbit's hull is a blob. Fills per triangle over its own
+/// bounding box only, so cost tracks covered area rather than triangle count.
+void fillTriangles(Mask m, List<V2> v, List<int> tris, {double half = 2.0}) {
+  final n = m.n;
+  final step = 2 * half / n;
+
+  for (var t = 0; t + 2 < tris.length; t += 3) {
+    final a = v[tris[t]], b = v[tris[t + 1]], c = v[tris[t + 2]];
+
+    final minX = math.min(a.x, math.min(b.x, c.x));
+    final maxX = math.max(a.x, math.max(b.x, c.x));
+    final minY = math.min(a.y, math.min(b.y, c.y));
+    final maxY = math.max(a.y, math.max(b.y, c.y));
+
+    var i0 = ((minX + half) / step).floor();
+    var i1 = ((maxX + half) / step).ceil();
+    var j0 = ((minY + half) / step).floor();
+    var j1 = ((maxY + half) / step).ceil();
+    if (i1 < 0 || j1 < 0 || i0 >= n || j0 >= n) continue;
+    i0 = i0.clamp(0, n - 1);
+    i1 = i1.clamp(0, n - 1);
+    j0 = j0.clamp(0, n - 1);
+    j1 = j1.clamp(0, n - 1);
+
+    // Signed area; sign tells us the winding so either order fills.
+    final area = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    if (area == 0) continue;
+    final s = area > 0 ? 1.0 : -1.0;
+
+    for (var j = j0; j <= j1; j++) {
+      final y = -half + (j + 0.5) * step;
+      final row = j * n;
+      for (var i = i0; i <= i1; i++) {
+        if (m.bits[row + i] != 0) continue;
+        final x = -half + (i + 0.5) * step;
+        final w0 = ((b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x)) * s;
+        if (w0 < 0) continue;
+        final w1 = ((c.x - b.x) * (y - b.y) - (c.y - b.y) * (x - b.x)) * s;
+        if (w1 < 0) continue;
+        final w2 = ((a.x - c.x) * (y - c.y) - (a.y - c.y) * (x - c.x)) * s;
+        if (w2 < 0) continue;
+        m.bits[row + i] = 1;
+      }
+    }
+  }
+}
+
 double iou(Mask a, Mask b) {
   var inter = 0, union = 0;
   for (var i = 0; i < a.bits.length; i++) {
