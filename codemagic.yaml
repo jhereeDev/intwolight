@@ -64,9 +64,19 @@ workflows:
       # only so the image is not whatever happens to be default that month.
       xcode: latest
       groups:
-        # Needs: CERTIFICATE_PRIVATE_KEY. Reuse the sarimanok group if the
-        # certificate is the same Apple team; otherwise make a new one.
-        - Sarimanok
+        # ⚠️ Must contain CERTIFICATE_PRIVATE_KEY, and must be created ON THIS
+        # APP in Codemagic. Checked 2026-08-03: variable groups are app-scoped,
+        # global variables are empty (and being removed from personal
+        # accounts), and no certificate is shared at account level — so the
+        # sarimanok group is NOT reachable from here. Referencing it silently
+        # yields an empty key.
+        #
+        # ⚠️ And the key is not optional. The Apple account already holds
+        # THREE Apple Distribution certificates (expiring 2027-07-23, 07-28 and
+        # 07-31), which is Apple's hard cap. `fetch-signing-files --create`
+        # therefore cannot mint a fourth: without the private key of an
+        # existing certificate it will try to create one and fail outright.
+        - intwolights_ios
       vars:
         BUNDLE_ID: com.jhere.intwolights
     triggering:
