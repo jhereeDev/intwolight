@@ -19,10 +19,23 @@ from PIL import Image
 
 BG = (8, 8, 10)  # scaffoldBackgroundColor
 TARGETS = {
-    "store": (1320, 2868),    # App Store, 6.9" iPhone
-    "devpost": (1179, 2556),  # Devpost gallery
+    "store": (1320, 2868),     # App Store, 6.9" iPhone
+    "store65": (1242, 2688),   # App Store, 6.5" iPhone — the slot the 1.0
+                               # submission form actually presents
+    "devpost": (1179, 2556),   # Devpost gallery
 }
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+# The captures come from an ANDROID emulator, so the top carries Android's
+# status bar (clock, wifi, battery) and the bottom its gesture pill. Shipping
+# those in an iOS App Store listing advertises the wrong platform on every
+# screenshot. Cropped away before fitting; the game draws nothing there.
+CROP_TOP, CROP_BOTTOM = 130, 110
+
+
+def strip_chrome(im):
+    return im.crop((0, CROP_TOP, im.width, im.height - CROP_BOTTOM))
 
 
 def fit(im, size):
@@ -41,7 +54,7 @@ def main(paths):
         os.makedirs(os.path.join(ROOT, "press", folder), exist_ok=True)
 
     for path in sorted(paths):
-        src = Image.open(path).convert("RGB")
+        src = strip_chrome(Image.open(path).convert("RGB"))
         name = os.path.basename(path)
         for folder, size in TARGETS.items():
             out = os.path.join(ROOT, "press", folder, name)
