@@ -145,8 +145,13 @@ List<Generated> generateChapter({
   required int wanted,
   required int hinges,
   int maxTries = 4000,
+  math.Random Function(int seed)? rng,
 }) {
-  final r = math.Random(seed);
+  // Defaults to dart:math so the already-baked levels.g.dart and dailies.g.dart
+  // stay byte-identical if they are ever regenerated. Endless passes
+  // StableRandom, because it generates on the device and its sequence must
+  // outlive SDK upgrades — see lib/rng.dart.
+  final r = (rng ?? math.Random.new)(seed);
   final kept = <Generated>[];
 
   for (var t = 0; kept.length < wanted && t < maxTries; t++) {

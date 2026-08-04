@@ -533,6 +533,12 @@ class _PlayScreenState extends State<PlayScreen>
                           stars: starsForScore(widget.progress.bestOf(_keyOf(_index))),
                           precision: widget.progress.bestOf(_keyOf(_index)),
                           isLast: _index >= _levels.length - 1,
+                          // Only the daily has a chain; the campaign indexes
+                          // levels, so a "streak" there would be meaningless.
+                          streak: widget.challenge
+                              ? widget.progress
+                                  .streakEndingAt(_keyOf(_index))
+                              : null,
                           onNext: _index < _levels.length - 1
                               ? () => _load(_index + 1)
                               : null,
@@ -752,6 +758,7 @@ class _SolvePanel extends StatelessWidget {
     required this.stars,
     required this.precision,
     required this.isLast,
+    required this.streak,
     required this.onNext,
     required this.onAgain,
     required this.onShare,
@@ -761,6 +768,11 @@ class _SolvePanel extends StatelessWidget {
   final int stars;
   final double precision;
   final bool isLast;
+
+  /// Days in the chain, or null for a campaign room. Shown here as well as on
+  /// the map because this is the moment it was actually earned — the map only
+  /// tells you about it next time you open the app.
+  final int? streak;
   final VoidCallback? onNext, onAgain, onShare, onMap;
 
   @override
@@ -778,6 +790,14 @@ class _SolvePanel extends StatelessWidget {
           const Text('SOLVED',
               style: TextStyle(
                   fontSize: 11, letterSpacing: 8, color: Color(0xFFE0A82E))),
+          if (streak != null && streak! > 0) ...[
+            const SizedBox(height: 10),
+            Text(
+              streak == 1 ? 'DAY ONE' : '$streak DAYS IN A ROW',
+              style: const TextStyle(
+                  fontSize: 10, letterSpacing: 4, color: Colors.white38),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -18,11 +18,27 @@ void main() {
     expect(daily([8, 9, 10]).streakEndingAt(11), 3);
   });
 
-  test('a missed day ends it', () {
-    // 8, 9 solved, 10 missed, 11 solved: the run is just today.
-    expect(daily([8, 9, 11]).streakEndingAt(11), 1);
-    // And with today unplayed and yesterday missed, it is gone.
-    expect(daily([8, 9]).streakEndingAt(11), 0);
+  test('ONE missed day is forgiven', () {
+    // 8, 9 solved, 10 missed, 11 solved. The gap costs the grace, not the run,
+    // and the count is days *played* — 3, not 4 — so it never overstates.
+    expect(daily([8, 9, 11]).streakEndingAt(11), 3);
+    // Today unplayed and yesterday missed: still protecting 8 and 9, because
+    // playing today would close the gap.
+    expect(daily([8, 9]).streakEndingAt(11), 2);
+  });
+
+  test('two missed days end it', () {
+    // 8, 9 solved, 10 AND 11 missed, 12 solved. Grace covers one gap only.
+    expect(daily([8, 9, 12]).streakEndingAt(12), 1);
+  });
+
+  test('grace is spent once, not once per gap', () {
+    // Alternate-day play must not be an unbroken streak forever.
+    expect(daily([4, 6, 8, 10]).streakEndingAt(10), 2);
+  });
+
+  test('grace is configurable and zero restores the strict rule', () {
+    expect(daily([8, 9, 11]).streakEndingAt(11, grace: 0), 1);
   });
 
   test('no days played is zero, not a crash', () {

@@ -100,12 +100,8 @@ class MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
-  int get _current {
-    for (var i = 0; i < allLevels.length; i++) {
-      if (!widget.progress.solved(i)) return i;
-    }
-    return allLevels.length - 1;
-  }
+  int get _current =>
+      widget.progress.currentLevel(unlocked: _unlocked);
 
   void _centreOnCurrent() {
     if (!_scroll.hasClients) return;
@@ -130,6 +126,9 @@ class MapScreenState extends State<MapScreen> {
                 onTapUp: (d) async {
                   final i = layout.hit(d.localPosition);
                   if (i == null) return;
+                  // Two locks, two different answers. Unbought opens the
+                  // paywall; not-yet-reached must NOT — being sold something
+                  // you already own is the most annoying possible response.
                   if (Progress.chapterLocked(chapterOf(i),
                       unlocked: _unlocked)) {
                     await Navigator.of(context).push<bool>(MaterialPageRoute(
@@ -137,6 +136,17 @@ class MapScreenState extends State<MapScreen> {
                       builder: (_) => UnlockScreen(store: widget.store),
                     ));
                     if (mounted) setState(() {});
+                    return;
+                  }
+                  if (widget.progress.levelLocked(i, unlocked: _unlocked)) {
+                    ScaffoldMessenger.of(context)
+                      ..clearSnackBars()
+                      ..showSnackBar(const SnackBar(
+                        duration: Duration(milliseconds: 1400),
+                        backgroundColor: Color(0xFF1A1A1F),
+                        content: Text('Solve the room before it.',
+                            style: TextStyle(color: Colors.white70)),
+                      ));
                     return;
                   }
                   await widget.onPlay(i);
@@ -416,6 +426,12 @@ class _MapPainter extends CustomPainter {
   void _room(Canvas canvas, int i) {
     final o = layout.nodeAt(i);
     final locked = Progress.chapterLocked(chapterOf(i), unlocked: unlocked);
+    // Not bought vs not reached. Both are unplayable, but only one is a
+    // purchase decision, so they must not look identical: unbought rooms keep
+    // the existing near-invisible treatment, unreached ones stay legible so
+    // the path ahead reads as a path rather than a void.
+    final unreached =
+        !locked && progress.levelLocked(i, unlocked: unlocked);
     // Locked beats solved. Progress survives an expired or refunded unlock, so
     // without this a locked chapter renders in full amber as though it were
     // still yours to play.
@@ -460,7 +476,14 @@ class _MapPainter extends CustomPainter {
         ..strokeWidth = isCurrent ? 1.6 : 1.1
         ..color = solved
             ? _amber.withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: locked ? 0.10 : (isCurrent ? 0.7 : 0.28)),
+            : Colors.white.withValues(
+                alpha: locked
+                    ? 0.10
+                    : isCurrent
+                        ? 0.7
+                        : unreached
+                            ? 0.16
+                            : 0.28),
     );
 
     // The seam, so the glyph reads as a corner and not just a hexagon.

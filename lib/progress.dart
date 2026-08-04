@@ -80,6 +80,14 @@ class Progress {
   int starsOf(int i) => _best.containsKey(i) ? starsForScore(_best[i]!) : 0;
   bool solved(int i) => _best.containsKey(i);
 
+  /// How many missed days a streak survives. One, and only once per streak.
+  ///
+  /// Forgiving *every* single-day gap would make alternate-day play an
+  /// unbroken streak forever, which is not a streak. Forgiving none punishes
+  /// one bad evening by deleting a month — and this is a contemplative game,
+  /// not a habit tracker with a guilt mechanic.
+  static const streakGrace = 1;
+
   /// Consecutive solved days ending at [today]. Only meaningful on the daily
   /// ledger, where the key IS the day number.
   ///
@@ -87,11 +95,21 @@ class Progress {
   /// who has not played today still sees the chain they are protecting rather
   /// than a zero. Showing 0 until they play would make the streak feel already
   /// lost every morning, which is the opposite of what a streak is for.
-  int streakEndingAt(int today) {
+  ///
+  /// Missed days are skipped rather than counted: the number is how many days
+  /// were *played*, so it can never overstate the work done.
+  int streakEndingAt(int today, {int grace = streakGrace}) {
     var day = solved(today) ? today : today - 1;
     var n = 0;
-    while (solved(day)) {
-      n++;
+    var left = grace;
+    while (true) {
+      if (solved(day)) {
+        n++;
+      } else if (left > 0) {
+        left--; // spend the grace, keep walking
+      } else {
+        break;
+      }
       day--;
     }
     return n;
@@ -123,6 +141,44 @@ class Progress {
   /// already paid.
   static bool chapterLocked(int c, {required bool unlocked}) =>
       c > 0 && !unlocked;
+
+  /// Whether level [i] can be opened.
+  ///
+  /// Two independent gates, and they answer different questions:
+  ///   * **commercial** — is this chapter bought? ([chapterLocked])
+  ///   * **progression** — has the room before it been solved?
+  ///
+  /// Progression runs *within* a chapter, not across the whole game: the first
+  /// room of every chapter you own is always open. A player who paid should be
+  /// able to look at what they bought, and a chapter that cannot be entered
+  /// until the previous one is 100% cleared turns an optional room into a wall.
+  ///
+  /// Solved means solved — one star, not three. Gating on precision would make
+  /// the curve about patience instead of insight.
+  ///
+  /// The daily and endless ledgers never come through here. The daily is keyed
+  /// by date and has no "previous level", and endless is inherently sequential.
+  bool levelLocked(int i, {required bool unlocked}) {
+    if (chapterLocked(chapterOf(i), unlocked: unlocked)) return true;
+    if (i == chapterStarts[chapterOf(i)]) return false; // chapter opener
+    return !solved(i - 1);
+  }
+
+  /// The level the player should be pointed at: the first unsolved room they
+  /// are allowed to open, or the last one if they have finished everything.
+  /// Falls back to the last **playable** room, not the last room. A player who
+  /// has finished the free chapter and bought nothing would otherwise be
+  /// pointed at level 44, which they cannot open — the map would scroll to a
+  /// locked room and look broken.
+  int currentLevel({required bool unlocked}) {
+    var lastPlayable = 0;
+    for (var i = 0; i < allLevels.length; i++) {
+      if (levelLocked(i, unlocked: unlocked)) continue;
+      if (!solved(i)) return i;
+      lastPlayable = i;
+    }
+    return lastPlayable;
+  }
 
   Timer? _flushTimer;
 
