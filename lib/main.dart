@@ -226,13 +226,12 @@ class _PlayScreenState extends State<PlayScreen>
               glow: g,
               hinge: lv.hasHinge ? _pose.hinge : null,
               onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
-              stars: score.solved
-                  ? starsForScore(math.min(score.a, score.b))
-                  : 0,
+              // Best earned, NOT the live pose. Showing the live value made
+              // the count fall back down when a solved player kept moving,
+              // while the map went on showing the best — the same level
+              // reading 1 star here and 2 there. Reported from a playtest.
+              stars: starsForScore(widget.progress.bestOf(_index)),
               onBack: () => Navigator.of(context).pop(),
-              onNext: _index < allLevels.length - 1
-                  ? () => _load(_index + 1)
-                  : null,
               onReset: () => _apply(const Pose(0, 0, 0)),
             ),
 
@@ -250,9 +249,10 @@ class _PlayScreenState extends State<PlayScreen>
                     opacity: g > 0.95 ? 1 : 0,
                     duration: const Duration(milliseconds: 220),
                     child: _SolvePanel(
-                      stars: starsForScore(math.min(score.a, score.b)),
-                      precision: math.min(score.a, score.b),
-                      best: widget.progress.bestOf(_index),
+                      // Both from the best, so easing in only ever makes the
+                      // numbers go UP, and they agree with the map.
+                      stars: starsForScore(widget.progress.bestOf(_index)),
+                      precision: widget.progress.bestOf(_index),
                       isLast: _index >= allLevels.length - 1,
                       onNext: _index < allLevels.length - 1
                           ? () => _load(_index + 1)
@@ -353,7 +353,6 @@ class _Hud extends StatelessWidget {
     required this.onHinge,
     required this.stars,
     required this.onBack,
-    required this.onNext,
     required this.onReset,
   });
 
@@ -364,7 +363,7 @@ class _Hud extends StatelessWidget {
   /// null when the level has no joint — the control simply isn't there.
   final double? hinge;
   final ValueChanged<double> onHinge;
-  final VoidCallback? onBack, onNext, onReset;
+  final VoidCallback? onBack, onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -402,9 +401,6 @@ class _Hud extends StatelessWidget {
                 ),
               const SizedBox(width: 8),
               _GhostButton(icon: Icons.refresh_rounded, onTap: onReset),
-              _GhostButton(
-                  icon: Icons.chevron_right_rounded,
-                  onTap: glow > 0.9 ? onNext : null),
             ],
           ),
         ),
@@ -536,20 +532,18 @@ class _SolvePanel extends StatelessWidget {
   const _SolvePanel({
     required this.stars,
     required this.precision,
-    required this.best,
     required this.isLast,
     required this.onNext,
     required this.onMap,
   });
 
   final int stars;
-  final double precision, best;
+  final double precision;
   final bool isLast;
   final VoidCallback? onNext, onMap;
 
   @override
   Widget build(BuildContext context) {
-    final improved = precision >= best - 1e-9;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 26),
@@ -592,8 +586,9 @@ class _SolvePanel extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             // Precision, not a points total — the score IS how well it matched.
-            '${(precision * 100).toStringAsFixed(1)}%  match'
-            '${improved ? "" : "   ·   best ${(best * 100).toStringAsFixed(1)}%"}',
+            // This IS the best now — record() updates it the instant the
+            // player improves — so there is nothing to compare it against.
+            '${(precision * 100).toStringAsFixed(1)}%  match',
             style: const TextStyle(
                 fontSize: 12, letterSpacing: 1.5, color: Colors.white38),
           ),
