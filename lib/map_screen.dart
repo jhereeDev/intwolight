@@ -156,8 +156,17 @@ class MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
-            IgnorePointer(
-              child: Container(
+            // ⚠️ NOT IgnorePointer. It used to be, back when this bar held a
+            // title and a star count and nothing you could press — the wrapper
+            // existed so the map could be scrolled from under it. Then TODAY,
+            // the Menagerie and the Workshop were added INSIDE it, i.e. inside
+            // a widget whose whole purpose is to discard pointer events, and
+            // all three were dead on arrival. Reported from a device.
+            //
+            // The cost of removing it: a drag started in the top 90px no
+            // longer scrolls the map. That is ordinary toolbar behaviour, and
+            // a toolbar is what this became the moment it grew buttons.
+            Container(
                 height: 90,
                 decoration: const BoxDecoration(
                   // Opaque THROUGH the title, then fade. A straight fade from
@@ -239,7 +248,6 @@ class MapScreenState extends State<MapScreen> {
                   ],
                 ),
               ),
-            ),
           ],
         ),
       ),
