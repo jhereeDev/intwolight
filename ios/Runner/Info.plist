@@ -80,5 +80,18 @@
 	     this repo dropped this one key, and only this one. -->
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<!-- Export compliance. Without this key TestFlight parks EVERY build behind a
+	     "Missing Compliance" prompt that has to be answered by hand in App Store
+	     Connect before the build can be installed — it did exactly that to build 6,
+	     2026-08-04, and did it to sarimanok's build 2 before that.
+
+	     False is the honest answer: the only encryption here is standard HTTPS to
+	     RevenueCat, made through Apple's own networking stack, which is exempt. The
+	     app bundles no crypto library and implements no algorithm of its own. This
+	     is the same declaration answered by hand for build 6 ("None of the
+	     algorithms mentioned above"), and Apple's own dialog recommends moving it
+	     into the plist. Revisit if the app ever ships its own crypto. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
