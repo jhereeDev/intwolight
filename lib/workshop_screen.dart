@@ -47,6 +47,12 @@ class _WorkshopScreenState extends State<WorkshopScreen>
 
   final List<List<V3>> _undo = [];
 
+  /// Same rule as the play screen: the finish panel waits for the finger to
+  /// lift, not merely for the pose to stop. A pan already in flight keeps its
+  /// gesture arena, so a panel that appears mid-drag does not block the drag —
+  /// it just watches the player undo their own solve underneath it.
+  bool _down = false;
+
   static final List<Offset> _motes = [
     for (var i = 0; i < 26; i++)
       Offset(_rand(i * 2) * 0.9 + 0.05, _rand(i * 2 + 1) * 0.7 + 0.12),
@@ -95,7 +101,7 @@ class _WorkshopScreenState extends State<WorkshopScreen>
   Widget build(BuildContext context) {
     final world = _rt.world(_at);
     final g = Curves.easeOutCubic.transform(_glow.value);
-    final solved = _score.solved && !widget.suppressPanel;
+    final solved = _score.solved && !widget.suppressPanel && !_down;
 
     return Scaffold(
       body: SafeArea(
@@ -104,6 +110,9 @@ class _WorkshopScreenState extends State<WorkshopScreen>
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                onPanDown: (_) => setState(() => _down = true),
+                onPanEnd: (_) => setState(() => _down = false),
+                onPanCancel: () => setState(() => _down = false),
                 onPanStart: (_) => _mark(),
                 onPanUpdate: (d) {
                   final c = _at[_sel];

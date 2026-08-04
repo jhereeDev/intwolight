@@ -196,6 +196,30 @@ class _PlayScreenState extends State<PlayScreen>
   Timer? _settle;
   static const _settleDelay = Duration(milliseconds: 900);
 
+  /// Whether a finger is currently down.
+  ///
+  /// "Settled" has to mean *let go*, not merely *stopped moving*. A player who
+  /// solves a level and holds still without lifting would otherwise get the
+  /// panel while their finger is still on the glass — and a pan already in
+  /// flight keeps its gesture arena, so the scrim does not intercept it. They
+  /// move again, the pose drifts, and the level silently un-solves underneath
+  /// a panel that says it was solved. Reported from a device.
+  bool _down = false;
+
+  void _armSettle() {
+    _settle?.cancel();
+    if (_score.solved && !widget.suppressPanel && !_down) {
+      _settle = Timer(_settleDelay, () {
+        if (mounted) setState(() => _panel = true);
+      });
+    }
+  }
+
+  void _release() {
+    _down = false;
+    _armSettle();
+  }
+
   /// The wordless teach: a ghost hand that drifts until the player drags.
   bool _touched = false;
 
@@ -371,18 +395,18 @@ class _PlayScreenState extends State<PlayScreen>
     }
     // Every pose change restarts the clock, so the panel only ever appears
     // once the player has actually stopped.
-    _settle?.cancel();
-    if (score.solved && !widget.suppressPanel) {
-      _settle = Timer(_settleDelay, () {
-        if (mounted) setState(() => _panel = true);
-      });
-    } else if (_panel) {
-      _panel = false;
-    }
     setState(() {
       _pose = p;
       _score = score;
     });
+    // Armed AFTER _score is updated, and only while nothing is touching the
+    // screen — see [_down].
+    _settle?.cancel();
+    if (score.solved) {
+      _armSettle();
+    } else if (_panel) {
+      setState(() => _panel = false);
+    }
   }
 
   @override
@@ -399,6 +423,12 @@ class _PlayScreenState extends State<PlayScreen>
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                onPanDown: (_) {
+                  _down = true;
+                  _settle?.cancel();
+                },
+                onPanEnd: (_) => _release(),
+                onPanCancel: _release,
                 onPanStart: (_) {
                   _mark();
                   if (!_touched) setState(() => _touched = true);
