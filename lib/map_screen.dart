@@ -183,16 +183,15 @@ class MapScreenState extends State<MapScreen> {
                 ),
                 alignment: Alignment.topLeft,
                 padding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
+                // ⚠️ No app title here any more. "IN TWO LIGHTS" at letter
+                // spacing 5 ate ~150 of the ~426 logical points available, and
+                // once TODAY, the Menagerie and the Workshop joined it the row
+                // overflowed — which is what made a chapter label collide with
+                // it in the first store capture. The app name is on the icon,
+                // the launch screen and the App Store listing; a home screen
+                // does not need to introduce itself.
                 child: Row(
                   children: [
-                    const Text(
-                      'IN TWO LIGHTS',
-                      style: TextStyle(
-                          fontSize: 13,
-                          letterSpacing: 5,
-                          color: Colors.white54),
-                    ),
-                    const SizedBox(width: 14),
                     _TodayChip(
                       done: widget.daily.solved(dailyDayNumber(DateTime.now())),
                       streak:
@@ -217,8 +216,8 @@ class MapScreenState extends State<MapScreen> {
                       child: Padding(
                         padding: const EdgeInsets.only(right: 14, left: 6),
                         child: Icon(Icons.auto_awesome_mosaic_outlined,
-                            size: 15,
-                            color: Colors.white.withValues(alpha: 0.45)),
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.5)),
                       ),
                     ),
                     GestureDetector(
@@ -232,8 +231,8 @@ class MapScreenState extends State<MapScreen> {
                       child: Padding(
                         padding: const EdgeInsets.only(right: 14),
                         child: Icon(Icons.handyman_outlined,
-                            size: 15,
-                            color: Colors.white.withValues(alpha: 0.45)),
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.5)),
                       ),
                     ),
                     Icon(Icons.star_rounded,

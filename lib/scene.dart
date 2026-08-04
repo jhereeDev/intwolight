@@ -35,7 +35,17 @@ const _bg = Color(0xFF08080A);
 const _wallLo = Color(0xFF14141A);
 const _wallHi = Color(0xFF2A2620);
 const _amber = Color(0xFFE0A82E);
+
+/// The two lights differ in **colour temperature**, not just position.
+///
+/// They were identical, which meant the only thing telling the walls apart was
+/// their angle — and at a glance, mid-drag, that is not enough. Warm on the
+/// left, cool on the right: the eye separates them instantly, so "which shadow
+/// am I fixing" stops being a question. It also makes the room read as two
+/// lamps rather than one ambient wash, which is the entire premise, and it is
+/// the same split the app icon uses.
 const _warm = Color(0xFFFFD68C);
+const _cool = Color(0xFFBFD2F2);
 const _solidLit = Color(0xFFE8E4DA);
 const _solidDark = Color(0xFF1D2230);
 
@@ -233,8 +243,8 @@ class CornerScenePainter extends CustomPainter {
     // it is what gives the shadows a lit surface to be dark against.
     final centre = project(const V3(0, 0, 0), size, k, o);
     for (final spot in [
-      (project(const V3(-kWall, 0.9, 0.1), size, k, o), wallA),
-      (project(const V3(0.1, 0.9, -kWall), size, k, o), wallB),
+      (project(const V3(-kWall, 0.9, 0.1), size, k, o), wallA, _warm),
+      (project(const V3(0.1, 0.9, -kWall), size, k, o), wallB, _cool),
     ]) {
       canvas.save();
       canvas.clipPath(spot.$2);
@@ -247,11 +257,15 @@ class CornerScenePainter extends CustomPainter {
             spot.$1,
             r,
             [
-              Color.lerp(_wallHi, _warm, 0.16 + glow * 0.30)!,
-              Color.lerp(_wallHi, _wallLo, 0.7)!,
+              Color.lerp(_wallHi, spot.$3, 0.20 + glow * 0.32)!,
+              Color.lerp(_wallHi, spot.$3, 0.07 + glow * 0.10)!,
+              Color.lerp(_wallHi, _wallLo, 0.72)!,
               _wallLo.withValues(alpha: 0.0),
             ],
-            [0.0, 0.55, 1.0],
+            // A tighter core with a longer tail. The old two-stop ramp fell off
+            // evenly and read as a flat disc; a lamp is bright in a small
+            // middle and dim for a long way after.
+            [0.0, 0.22, 0.62, 1.0],
           ),
       );
       canvas.restore();
@@ -292,7 +306,10 @@ class CornerScenePainter extends CustomPainter {
         ..color = hit
             ? _amber.withValues(alpha: 0.42)
             : const Color(0xFF05050A).withValues(alpha: 0.78)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2);
+        // Scaled to the room, not fixed in device pixels. At a constant 2.2 a
+        // shadow was correctly soft on a small phone and razor-edged on a
+        // tablet, because the room grew and the penumbra did not.
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, math.max(1.6, k * 0.022));
       for (final m in ms) {
         canvas.drawPath(shadowPath2D(m).transform(mat), paint);
       }
