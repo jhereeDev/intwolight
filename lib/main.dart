@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'audio.dart';
+import 'daily.dart';
 import 'geom.dart';
 import 'level.dart';
 import 'forms.dart';
@@ -20,19 +21,27 @@ Future<void> main() async {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   final progress = await Progress.load();
+  // Separate ledger: the campaign indexes levels, the daily indexes days.
+  final daily = await Progress.load(storeKey: Progress.dailyKey);
   final store = Store();
   // Not awaited: a slow or unreachable store must never delay first paint.
   // Store reports unlocked until it knows otherwise, so the map is correct
   // either way and simply re-renders when the entitlement arrives.
   unawaited(store.init());
 
-  runApp(InTwoLightsApp(progress: progress, store: store));
+  runApp(InTwoLightsApp(progress: progress, daily: daily, store: store));
 }
 
 class InTwoLightsApp extends StatelessWidget {
-  const InTwoLightsApp({super.key, required this.progress, required this.store});
+  const InTwoLightsApp({
+    super.key,
+    required this.progress,
+    required this.daily,
+    required this.store,
+  });
 
   final Progress progress;
+  final Progress daily;
   final Store store;
 
   @override
@@ -46,6 +55,28 @@ class InTwoLightsApp extends StatelessWidget {
           builder: (context) => MapScreen(
             progress: progress,
             store: store,
+            onDaily: () {
+              // Resolved at tap time, not at build time: the app can sit open
+              // across midnight, and yesterday's room would be wrong.
+              final now = DateTime.now();
+              return Navigator.of(context).push<void>(
+                PageRouteBuilder(
+                  transitionDuration: const Duration(milliseconds: 420),
+                  reverseTransitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (_, a, _) => FadeTransition(
+                    opacity: a,
+                    child: PlayScreen(
+                      index: 0,
+                      progress: daily,
+                      // One level, so NEXT resolves to THE END with no special
+                      // case: a daily room has no tomorrow to walk into.
+                      levels: [dailyLevelFor(now)],
+                      progressKey: (_) => dailyDayNumber(now),
+                    ),
+                  ),
+                ),
+              );
+            },
             onPlay: (i) => Navigator.of(context).push<void>(
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 420),
@@ -64,10 +95,26 @@ class InTwoLightsApp extends StatelessWidget {
 }
 
 class PlayScreen extends StatefulWidget {
-  const PlayScreen({super.key, required this.index, required this.progress});
+  const PlayScreen({
+    super.key,
+    required this.index,
+    required this.progress,
+    this.levels,
+    this.progressKey,
+  });
 
   final int index;
   final Progress progress;
+
+  /// What to play. Defaults to the campaign. The daily room passes a
+  /// single-level list, which is also what makes NEXT resolve to "THE END"
+  /// without a special case.
+  final List<Level>? levels;
+
+  /// Maps a position in [levels] to the key progress is stored under.
+  /// Identity for the campaign. The daily passes the *day number*, so a pool
+  /// wrap records against the day rather than overwriting an old one.
+  final int Function(int)? progressKey;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -75,9 +122,12 @@ class PlayScreen extends StatefulWidget {
 
 class _PlayScreenState extends State<PlayScreen>
     with SingleTickerProviderStateMixin {
+  late final List<Level> _levels = widget.levels ?? allLevels;
+  int _keyOf(int i) => widget.progressKey?.call(i) ?? i;
+
   late int _index = widget.index;
   Pose _pose = const Pose(0, 0, 0);
-  late LevelRuntime _rt = LevelRuntime(allLevels[widget.index]);
+  late LevelRuntime _rt = LevelRuntime(_levels[widget.index]);
 
   // Scored once per pose change, not once in _apply and again in build().
   late Score _score = _rt.score(_pose);
@@ -171,8 +221,8 @@ class _PlayScreenState extends State<PlayScreen>
 
   void _load(int i) {
     setState(() {
-      _index = i.clamp(0, allLevels.length - 1);
-      _rt = LevelRuntime(allLevels[_index]);
+      _index = i.clamp(0, _levels.length - 1);
+      _rt = LevelRuntime(_levels[_index]);
       _pose = const Pose(0, 0, 0);
       _score = _rt.score(_pose);
       _targetA = unionOutline2D(_rt.targetShadowsA());
@@ -208,7 +258,7 @@ class _PlayScreenState extends State<PlayScreen>
     // earns the third star. Stars are precision, not speed — there is no
     // reason to punish someone for keeping at it.
     if (score.solved) {
-      widget.progress.record(_index, math.min(score.a, score.b));
+      widget.progress.record(_keyOf(_index), math.min(score.a, score.b));
     }
     // Every pose change restarts the clock, so the panel only ever appears
     // once the player has actually stopped.
@@ -228,7 +278,7 @@ class _PlayScreenState extends State<PlayScreen>
 
   @override
   Widget build(BuildContext context) {
-    final lv = allLevels[_index];
+    final lv = _levels[_index];
     final world = worldMeshes(lv, _pose);
     final score = _score;
     final g = Curves.easeOutCubic.transform(_glow.value);
@@ -273,7 +323,7 @@ class _PlayScreenState extends State<PlayScreen>
 
             _Hud(
               index: _index,
-              total: allLevels.length,
+              total: _levels.length,
               a: score.a,
               b: score.b,
               glow: g,
@@ -287,7 +337,7 @@ class _PlayScreenState extends State<PlayScreen>
               // the count fall back down when a solved player kept moving,
               // while the map went on showing the best — the same level
               // reading 1 star here and 2 there. Reported from a playtest.
-              stars: starsForScore(widget.progress.bestOf(_index)),
+              stars: starsForScore(widget.progress.bestOf(_keyOf(_index))),
               onBack: () => Navigator.of(context).pop(),
               onReset: () => _apply(const Pose(0, 0, 0)),
             ),
@@ -310,10 +360,10 @@ class _PlayScreenState extends State<PlayScreen>
                         child: _SolvePanel(
                           // Both from the best, and by now the pose has been
                           // still for a beat, so these are final.
-                          stars: starsForScore(widget.progress.bestOf(_index)),
-                          precision: widget.progress.bestOf(_index),
-                          isLast: _index >= allLevels.length - 1,
-                          onNext: _index < allLevels.length - 1
+                          stars: starsForScore(widget.progress.bestOf(_keyOf(_index))),
+                          precision: widget.progress.bestOf(_keyOf(_index)),
+                          isLast: _index >= _levels.length - 1,
+                          onNext: _index < _levels.length - 1
                               ? () => _load(_index + 1)
                               : null,
                           onAgain: () => _apply(const Pose(0, 0, 0)),

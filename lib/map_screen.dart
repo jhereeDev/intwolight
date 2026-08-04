@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import 'forms.dart';
+import 'daily.dart';
 import 'progress.dart';
 import 'store.dart';
 import 'unlock_screen.dart';
@@ -51,6 +52,7 @@ class MapScreen extends StatefulWidget {
     required this.progress,
     required this.store,
     required this.onPlay,
+    required this.onDaily,
   });
 
   final Progress progress;
@@ -58,6 +60,11 @@ class MapScreen extends StatefulWidget {
 
   /// Returns the level index chosen; the caller pushes the play screen.
   final Future<void> Function(int index) onPlay;
+
+  /// Today's room. Free, and outside the chapter gate on purpose — it is the
+  /// reason to open the app on a day when the campaign is finished, so
+  /// paywalling it would be charging for the retention loop.
+  final Future<void> Function() onDaily;
 
   @override
   State<MapScreen> createState() => MapScreenState();
@@ -163,6 +170,14 @@ class MapScreenState extends State<MapScreen> {
                           letterSpacing: 5,
                           color: Colors.white54),
                     ),
+                    const SizedBox(width: 14),
+                    _TodayChip(
+                      done: widget.progress.solved(dailyDayNumber(DateTime.now())),
+                      onTap: () async {
+                        await widget.onDaily();
+                        if (mounted) setState(() {});
+                      },
+                    ),
                     const Spacer(),
                     Icon(Icons.star_rounded,
                         size: 13, color: _amber.withValues(alpha: 0.8)),
@@ -182,6 +197,46 @@ class MapScreenState extends State<MapScreen> {
       ),
     );
   }
+}
+
+/// The only always-visible entry point that is not a chapter. Deliberately
+/// small: the campaign is still the game, and this is the thing that brings
+/// someone back on day 42 when the campaign is done.
+class _TodayChip extends StatelessWidget {
+  const _TodayChip({required this.done, required this.onTap});
+  final bool done;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(
+                color: done ? _amber.withValues(alpha: 0.5) : Colors.white24),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (done) ...[
+                Icon(Icons.check_rounded, size: 11, color: _amber),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                'TODAY',
+                style: TextStyle(
+                  fontSize: 10,
+                  letterSpacing: 3,
+                  color: done ? _amber : Colors.white54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 /// Repeating 'I' gave "CHAPTER IIII" the moment a fourth chapter existed.

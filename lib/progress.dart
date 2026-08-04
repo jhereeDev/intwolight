@@ -44,18 +44,26 @@ int starsForScore(double weakest) {
 
 /// Best result per level. Absent means never solved.
 class Progress {
-  Progress(this._best);
+  Progress(this._best, {this.storeKey = campaignKey});
+
+  /// Which namespace this instance reads and writes. The campaign and the
+  /// daily room keep separate ledgers — they index different things, and a
+  /// shared key would have day 7 overwrite level 7.
+  final String storeKey;
 
   final Map<int, double> _best;
   /// ⚠️ Bumped from `best_v1` when the Hare moved into CHAPTER I. Stars are
   /// keyed by level index, so a reorder would silently reattribute every star
   /// after the insertion point to the wrong puzzle. Bumping drops old progress
   /// instead, which is the honest trade while the game is still pre-release.
-  static const _key = 'best_v2';
+  static const campaignKey = 'best_v2';
 
-  static Future<Progress> load() async {
+  /// Keyed by day number, not pool index — see `daily.dart`.
+  static const dailyKey = 'daily_v1';
+
+  static Future<Progress> load({String storeKey = campaignKey}) async {
     final p = await SharedPreferences.getInstance();
-    final raw = p.getStringList(_key) ?? const [];
+    final raw = p.getStringList(storeKey) ?? const [];
     final map = <int, double>{};
     for (final e in raw) {
       final bits = e.split(':');
@@ -64,7 +72,7 @@ class Progress {
       final v = double.tryParse(bits[1]);
       if (i != null && v != null) map[i] = v;
     }
-    return Progress(map);
+    return Progress(map, storeKey: storeKey);
   }
 
   double bestOf(int i) => _best[i] ?? 0;
@@ -117,7 +125,7 @@ class Progress {
     _flushTimer = null;
     final p = await SharedPreferences.getInstance();
     await p.setStringList(
-      _key,
+      storeKey,
       [for (final e in _best.entries) '${e.key}:${e.value.toStringAsFixed(4)}'],
     );
   }
