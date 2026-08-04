@@ -1,6 +1,13 @@
 """App icon for In Two Lights — 1024x1024, opaque (the App Store rejects alpha).
 
-Run: python press/make_icon.py press/icon-1024.png
+Run:  python press/make_icon.py
+Then: dart run flutter_launcher_icons
+
+Writes BOTH press/icon-1024.png (the press kit copy) and assets/icon.png,
+which is what `flutter_launcher_icons` reads — it is configured in pubspec.yaml
+and owns every slot in the app. Do not hand-resize icons into ios/ or android/;
+that tool already does it, and a hand-rolled resizer will drift from whatever
+sizes Xcode and Gradle actually expect.
 
 The mark states the mechanic and nothing else: **one object, two different
 shadows.** A circle on the left wall, a triangle on the right. Same sculpture,
@@ -17,7 +24,7 @@ unmistakable at any size, and their *difference* is instant. Two blobs read as
 which is precisely the tension the game runs on.
 """
 import math
-import sys
+import os
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
@@ -51,7 +58,7 @@ def wall_panel(width, height, top, bottom):
     return panel.resize((width, height), Image.BILINEAR)
 
 
-def main(out):
+def main():
     img = Image.new("RGB", (S, S), WALL_R)
 
     # The corner: two panels, brighter on the left, meeting at the seam.
@@ -96,9 +103,25 @@ def main(out):
         [(SEAM, 0), (SEAM, S)], fill=(20, 18, 20), width=max(1, int(S * 0.004))
     )
 
-    img.save(out, "PNG")
-    print(f"wrote {out}  {S}x{S}  mode={img.mode}")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for out in (os.path.join(root, "press", "icon-1024.png"),
+                os.path.join(root, "assets", "icon.png")):
+        img.save(out, "PNG")
+        print(f"wrote {os.path.relpath(out, root)}  {S}x{S}  mode={img.mode}")
+    # Proof sheet for the press kit, regenerated here so it can never end up
+    # advertising the previous icon next to the current app.
+    sizes = [180, 120, 87, 60, 40, 29]
+    pad, gap = 24, 22
+    sheet = Image.new("RGB", (1024, max(sizes) + pad * 2), (10, 10, 12))
+    x = pad
+    for sz in sizes:
+        sheet.paste(img.resize((sz, sz), Image.LANCZOS),
+                    (x, pad + (max(sizes) - sz) // 2))
+        x += sz + gap
+    sheet.save(os.path.join(root, "press", "icon-sizes.png"), "PNG")
+
+    print("now run: dart run flutter_launcher_icons")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "icon.png")
+    main()

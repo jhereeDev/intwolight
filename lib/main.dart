@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'audio.dart';
 import 'daily.dart';
@@ -73,6 +78,9 @@ class InTwoLightsApp extends StatelessWidget {
                       // case: a daily room has no tomorrow to walk into.
                       levels: [dailyLevelFor(now)],
                       progressKey: (_) => dailyDayNumber(now),
+                      shareTitle: 'Daily · '
+                          '${now.year}-${now.month.toString().padLeft(2, '0')}'
+                          '-${now.day.toString().padLeft(2, '0')}',
                     ),
                   ),
                 ),
@@ -102,6 +110,7 @@ class PlayScreen extends StatefulWidget {
     required this.progress,
     this.levels,
     this.progressKey,
+    this.shareTitle,
   });
 
   final int index;
@@ -116,6 +125,11 @@ class PlayScreen extends StatefulWidget {
   /// Identity for the campaign. The daily passes the *day number*, so a pool
   /// wrap records against the day rather than overwriting an old one.
   final int Function(int)? progressKey;
+
+  /// What a shared image calls this room. Campaign levels fall back to their
+  /// number; the daily passes its own, because a daily level's `name` is its
+  /// position in the pool and not the date anyone played it.
+  final String? shareTitle;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -211,6 +225,44 @@ class _PlayScreenState extends State<PlayScreen>
   /// The room's tone. Held for as long as this screen lives, its loudness
   /// tracking the weaker wall — the game's only warmer/colder channel.
   final GameAudio _audio = GameAudio();
+
+  /// Wraps the scene only. Capturing the whole screen would put the panel —
+  /// buttons, the word SOLVED — into the picture, and the thing worth sharing
+  /// is the room.
+  final GlobalKey _sceneKey = GlobalKey();
+  bool _sharing = false;
+
+  Future<void> _share() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final boundary = _sceneKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      // 3x so it survives being viewed full-screen on someone else's phone.
+      final image = await boundary.toImage(pixelRatio: 3);
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      if (png == null) return;
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/in-two-lights.png');
+      await file.writeAsBytes(png.buffer.asUint8List(), flush: true);
+      await SharePlus.instance
+          .share(ShareParams(files: [XFile(file.path)], text: _shareText));
+    } catch (_) {
+      // Sharing is a nicety. A failed share must never take the game down or
+      // interrupt a player who just solved something.
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  String get _shareText {
+    final n = starsForScore(widget.progress.bestOf(_keyOf(_index)));
+    final stars = '★' * n + '☆' * (3 - n);
+    return '${widget.shareTitle ?? 'Level ${_index + 1}'}  $stars'
+        '   ·   In Two Lights';
+  }
 
   @override
   void initState() {
@@ -323,7 +375,9 @@ class _PlayScreenState extends State<PlayScreen>
                   (_pose.pitch + d.delta.dy * 0.012).clamp(-1.4, 1.4),
                   _pose.hinge,
                 )),
-                child: CustomPaint(
+                child: RepaintBoundary(
+                  key: _sceneKey,
+                  child: CustomPaint(
                   size: Size.infinite,
                   painter: CornerScenePainter(
                     world: world,
@@ -335,6 +389,7 @@ class _PlayScreenState extends State<PlayScreen>
                     hitB: score.b >= kSolveThreshold,
                     glow: g,
                     motes: _motes,
+                  ),
                   ),
                 ),
               ),
@@ -397,6 +452,7 @@ class _PlayScreenState extends State<PlayScreen>
                               ? () => _load(_index + 1)
                               : null,
                           onAgain: () => _apply(const Pose(0, 0, 0)),
+                          onShare: _sharing ? null : _share,
                           onMap: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -686,13 +742,14 @@ class _SolvePanel extends StatelessWidget {
     required this.isLast,
     required this.onNext,
     required this.onAgain,
+    required this.onShare,
     required this.onMap,
   });
 
   final int stars;
   final double precision;
   final bool isLast;
-  final VoidCallback? onNext, onAgain, onMap;
+  final VoidCallback? onNext, onAgain, onShare, onMap;
 
   @override
   Widget build(BuildContext context) {
@@ -785,11 +842,26 @@ class _SolvePanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          TextButton(
-            onPressed: onMap,
-            child: const Text('MAP',
-                style: TextStyle(
-                    fontSize: 12, letterSpacing: 3, color: Colors.white38)),
+          // MAP and SHARE as peers, both quiet. Sharing is an offer, not a
+          // demand — a solved puzzle that nags you to post it cheapens the
+          // moment it is asking you to post.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: onMap,
+                child: const Text('MAP',
+                    style: TextStyle(
+                        fontSize: 12, letterSpacing: 3, color: Colors.white38)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: onShare,
+                child: const Text('SHARE',
+                    style: TextStyle(
+                        fontSize: 12, letterSpacing: 3, color: Colors.white38)),
+              ),
+            ],
           ),
         ],
       ),
