@@ -65,5 +65,20 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<!-- ⚠️ MANDATORY whenever TARGETED_DEVICE_FAMILY includes iPad ("1,2") and the
+	     iPad orientations are not all four. Without it altool rejects the upload
+	     outright with error 90474 — not at review, at upload — demanding all four
+	     orientations "to support iPad multitasking". It did exactly that to the
+	     first IPA that ever built and signed, 2026-08-04.
+
+	     This key is the escape hatch: it declares the app does not support Slide
+	     Over or Split View, so the four-orientation rule no longer applies. The
+	     alternative is real landscape support on iPad, which is a design change,
+	     not a plist change — landscape was never laid out.
+
+	     sarimanok carries the identical config and shipped with it. The port to
+	     this repo dropped this one key, and only this one. -->
+	<key>UIRequiresFullScreen</key>
+	<true/>
 </dict>
 </plist>
