@@ -397,22 +397,27 @@ class _PlayScreenState extends State<PlayScreen>
 
   void _apply(Pose p) {
     final score = _rt.score(p);
-    if (score.solved && !_wasSolved) {
+    // Hysteresis: enter on [kSolveThreshold], leave only below
+    // [kReleaseThreshold]. Everything downstream — glow, chord, recording,
+    // the finish timer — keys off this one latched value rather than
+    // re-deciding independently.
+    final nowSolved = score.latched(wasSolved: _wasSolved);
+    if (nowSolved && !_wasSolved) {
       _wasSolved = true;
       HapticFeedback.mediumImpact();
       // Chord and glow are both 620ms, fired together so the arrival is one
       // event rather than a sound chasing a light.
       _audio.solved();
       _glow.forward();
-    } else if (!score.solved && _wasSolved) {
+    } else if (!nowSolved && _wasSolved) {
       _wasSolved = false;
       _glow.reverse();
     }
-    _audio.proximity(math.min(score.a, score.b), solved: score.solved);
+    _audio.proximity(math.min(score.a, score.b), solved: nowSolved);
     // Record continuously while solved, so easing further into the basin
     // earns the third star. Stars are precision, not speed — there is no
     // reason to punish someone for keeping at it.
-    if (score.solved) {
+    if (nowSolved) {
       widget.progress.record(_keyOf(_index), math.min(score.a, score.b));
     }
     // Every pose change restarts the clock, so the panel only ever appears
@@ -424,7 +429,7 @@ class _PlayScreenState extends State<PlayScreen>
     // Armed AFTER _score is updated, and only while nothing is touching the
     // screen — see [_down].
     _settle?.cancel();
-    if (score.solved) {
+    if (nowSolved) {
       _armSettle();
     } else if (_panel) {
       setState(() => _panel = false);
@@ -474,6 +479,11 @@ class _PlayScreenState extends State<PlayScreen>
                     hitB: score.b >= kSolveThreshold,
                     glow: g,
                     motes: _motes,
+                    // The daily, endless and the Workshop pass no chapter and
+                    // get the neutral light — borrowing a chapter's identity
+                    // would make them look like part of the campaign.
+                    ambience: Ambience.of(
+                        widget.levels == null ? chapterOf(_index) : null),
                   ),
                   ),
                 ),

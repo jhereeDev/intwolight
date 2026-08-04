@@ -4,6 +4,19 @@ import 'mesh.dart';
 /// Solved when both walls reach this.
 const double kSolveThreshold = 0.92;
 
+/// A solve is only given up below **this**, not below [kSolveThreshold].
+///
+/// Without the gap, success flickers. Drag is 0.012 rad per logical pixel and a
+/// diagonal moves both axes, so a finger resting on the glass wanders across
+/// 0.92 repeatedly: the chord re-fires, the glow reverses, the finish panel's
+/// timer restarts. The player stops trusting the silhouette they just reasoned
+/// out and starts stabilising a number.
+///
+/// Entering at 0.92 and releasing at 0.89 makes the solve latch. It is
+/// deliberately not a full lock — back the sculpture properly out of the pose
+/// and you do lose it, because a solve you cannot lose is not a puzzle.
+const double kReleaseThreshold = 0.89;
+
 /// One rigid part of a sculpture.
 ///
 /// Still called Box because the 36 generated levels are boxes and
@@ -76,7 +89,17 @@ Mask maskOfShadows(List<Mesh2> shadows, int n, {Mask? into}) {
 class Score {
   const Score(this.a, this.b);
   final double a, b;
+
+  /// Crossing into a solve.
   bool get solved => a >= kSolveThreshold && b >= kSolveThreshold;
+
+  /// Still solved, for a pose that already was. See [kReleaseThreshold].
+  bool get holds => a >= kReleaseThreshold && b >= kReleaseThreshold;
+
+  /// Whether a solve survives, given whether one was already in hand. This is
+  /// the only place the two thresholds should be compared — doing it inline
+  /// is how one of them gets forgotten.
+  bool latched({required bool wasSolved}) => wasSolved ? holds : solved;
 }
 
 class LevelRuntime {
@@ -119,7 +142,10 @@ class LevelRuntime {
 const levels = <Level>[
   Level(
     name: '1 · Tee',
-    hint: 'Drag to rotate.',
+    // Not "drag to rotate": hints only appear after a minute of being stuck,
+    // and by then the player has been dragging the whole time. What they are
+    // missing on the first room is that ONE turn drives BOTH shadows.
+    hint: 'One shape. Two shadows. Both must fit.',
     boxes: [
       Box(center: V3(0, 0, 0), half: V3(0.95, 0.24, 0.24)),
       Box(center: V3(0, 0.58, 0), half: V3(0.24, 0.34, 0.24)),

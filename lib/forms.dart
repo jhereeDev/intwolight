@@ -108,25 +108,47 @@ final formLevels = <Level>[
 
 /// Everything playable, in order.
 ///
-/// Not a plain concatenation: [catLevel] is lifted out of CHAPTER V and planted
-/// at index 3 — level 4 — so the player meets a recognisable figure three
-/// levels after learning to rotate rather than thirty-six, and so the FREE
-/// chapter demonstrates what the game is actually for. A player who never buys,
-/// and a competition judge who plays only what they are given, would otherwise
-/// see nothing but abstract box arrangements.
+/// ⚠️ THE FIRST THREE ROOMS ARE AUTHORED, ON PURPOSE.
 ///
-/// It is a silhouette rather than one of the organic forms because the
-/// silhouettes are the ones that demonstrably read — see the note on the Hare
-/// in [formLevels], which spent a day here on an argument nobody had checked
-/// against a screen.
+/// They used to be `generatedLevels.take(3)` — the three highest-`approach`
+/// procedural rooms, ordered by a metric that has never been checked against a
+/// human. So the first four minutes of the game, which is all a competition
+/// judge will ever see, was its least validated part, and the one figure known
+/// to read (the Cat) sat fourth.
+///
+/// The opening is now the M0 trio from `level.dart`, which was written as a
+/// teaching arc and is the only content with human validation behind it — the
+/// Hinge is the level that passed the M0 kill gate, where the verdict was
+/// "deduction, I reasoned about it" rather than "I wiggled until it went
+/// amber":
+///
+///   1 Tee   — one shape, wide basin. Learn that dragging rotates, and win.
+///   2 Step  — three blocks. Fixing one wall visibly breaks the other. The
+///             mechanic, stated without words.
+///   3 Cat   — the payoff. Scattered shards whose shadow is a cat, so the
+///             player learns what the game is FOR before being asked to grind.
+///
+/// The Hinge then opens CHAPTER II, which is called THE JOINT — teaching the
+/// bend exactly where the chapter name promises it, instead of hiding it at
+/// level 3 of a chapter called ROTATION.
 ///
 /// ⚠️ This order is the save format. `Progress` keys stars by index, so moving
-/// a level shifts every star after it onto the wrong puzzle. Bump `campaignKey`
-/// in progress.dart when this list is reordered.
+/// a level shifts every star after it onto the wrong puzzle. Bump
+/// `campaignKey` in progress.dart when this list is reordered.
 final allLevels = <Level>[
-  ...generatedLevels.take(3),
+  // CHAPTER I — ROTATION. No joints, and the Cat is pure rotation too.
+  levels[0], // Tee
+  levels[1], // Step
   catLevel,
-  ...generatedLevels.skip(3),
+  ...generatedLevels.take(12),
+
+  // CHAPTER II — THE JOINT. Opens with the validated Hinge.
+  levels[2],
+  ...generatedLevels.skip(12).take(15),
+
+  // CHAPTER III — TWO JOINTS.
+  ...generatedLevels.skip(27),
+
   ...formLevels,
   ...silhouetteLevels,
 ];

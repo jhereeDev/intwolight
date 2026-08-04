@@ -9,12 +9,14 @@ import 'forms.dart';
 /// 13–27 have one, 28–36 mix one and two. Note that makes chapter 3 *mixed*,
 /// not "two hinges" as the early notes claimed.
 ///
-/// ⚠️ Every boundary past the first is shifted by one against those generated
-/// numbers, because [catLevel] is spliced into CHAPTER I at index 3 (see
-/// [allLevels]). CHAPTER I is therefore 13 levels, not 12, and stays the
-/// no-joint chapter — the Cat is pure rotation, which is why it could go there
-/// at all. FORMS is 3 (Pear, Hare, Vessel) and SILHOUETTES 4.
-const chapterStarts = [0, 13, 28, 37, 40];
+/// ⚠️ These no longer index `generatedLevels` — [allLevels] opens with three
+/// AUTHORED rooms (Tee, Step, Cat) and CHAPTER II opens with a fourth (Hinge),
+/// so every boundary is shifted. See the note on [allLevels].
+///   I   ROTATION    15 = Tee, Step, Cat + 12 no-joint generated
+///   II  THE JOINT   16 = Hinge + 15 one-joint generated
+///   III TWO JOINTS   9 = the remaining generated, one and two joints mixed
+///   IV  FORMS        3   V SILHOUETTES 4     → 47 rooms
+const chapterStarts = [0, 15, 31, 40, 43];
 
 const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS', 'SILHOUETTES'];
 
@@ -52,12 +54,14 @@ class Progress {
   final String storeKey;
 
   final Map<int, double> _best;
-  /// ⚠️ Bumped to v3 when the Cat replaced the Hare in CHAPTER I; v2 when the
+  /// ⚠️ v4: the authored opening arc (Tee, Step, Cat) replaced the first three
+  /// generated rooms and the Hinge was planted at the head of CHAPTER II.
+  /// v3 when the Cat replaced the Hare in CHAPTER I; v2 when the
   /// Hare first moved there. Stars are
   /// keyed by level index, so a reorder would silently reattribute every star
   /// after the insertion point to the wrong puzzle. Bumping drops old progress
   /// instead, which is the honest trade while the game is still pre-release.
-  static const campaignKey = 'best_v3';
+  static const campaignKey = 'best_v4';
 
   /// Keyed by day number, not pool index — see `daily.dart`.
   static const dailyKey = 'daily_v1';

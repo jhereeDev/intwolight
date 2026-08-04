@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:in_two_lights/level.dart';
 import 'package:in_two_lights/forms.dart';
+import 'package:in_two_lights/level.dart';
 import 'package:in_two_lights/levels.g.dart';
 import 'package:in_two_lights/progress.dart';
 

@@ -45,6 +45,53 @@ const _amber = Color(0xFFE0A82E);
 /// lamps rather than one ambient wash, which is the entire premise, and it is
 /// the same split the app icon uses.
 const _warm = Color(0xFFFFD68C);
+
+/// The light a chapter is lit by.
+///
+/// Every room was the same corner in the same amber, which made a 47-room
+/// campaign read as one long room. Chapters now change the *light* rather than
+/// the geometry: same walls, same seam, different hour of the day. It costs
+/// two colours per chapter and it is the first thing visible in a screenshot.
+///
+/// [wall] is the unlit wall; [lamp] is what the two lights throw onto it.
+/// The two lamps are deliberately different colours — that contrast is how the
+/// two walls stay legible as two separate constraints rather than one wash.
+/// A chapter shifts both together; it must never collapse them to the same
+/// colour, or the game loses the thing its name is about.
+class Ambience {
+  const Ambience(this.wall, this.lamp, this.lamp2);
+  final Color wall;
+
+  /// Wall A's light — the warm side.
+  final Color lamp;
+
+  /// Wall B's light — the cool side.
+  final Color lamp2;
+
+  /// Chapter I is deliberately the plainest: the tutorial should look like the
+  /// game's default state, so later chapters read as a departure from it.
+  static const byChapter = <Ambience>[
+    // I ROTATION — the default. The tutorial should look like the game's
+    // resting state so every later chapter reads as a departure from it.
+    Ambience(Color(0xFF14141A), _warm, _cool),
+    // II THE JOINT — dusk. Both lamps warm slightly, the gap stays.
+    Ambience(Color(0xFF16131A), Color(0xFFFFC98F), Color(0xFF9FC8E8)),
+    // III TWO JOINTS — the coldest room, for the hardest chapter.
+    Ambience(Color(0xFF121620), Color(0xFFE8D2B4), Color(0xFF9DBEFF)),
+    // IV FORMS — low sun on organic shapes.
+    Ambience(Color(0xFF1A1512), Color(0xFFFFC178), Color(0xFF89B7C4)),
+    // V SILHOUETTES — theatrical, nearly a stage.
+    Ambience(Color(0xFF10141A), Color(0xFFF0E4FF), Color(0xFF8FD4FF)),
+  ];
+
+  /// Rooms with no chapter — the daily, endless, the Workshop — use the
+  /// default rather than borrowing a chapter's identity.
+  static const neutral = Ambience(_wallLo, _warm, _cool);
+
+  static Ambience of(int? chapter) => chapter == null
+      ? neutral
+      : byChapter[chapter.clamp(0, byChapter.length - 1)];
+}
 const _cool = Color(0xFFBFD2F2);
 const _solidLit = Color(0xFFE8E4DA);
 const _solidDark = Color(0xFF1D2230);
@@ -193,6 +240,7 @@ class CornerScenePainter extends CustomPainter {
     required this.hitB,
     required this.glow,
     required this.motes,
+    this.ambience = Ambience.neutral,
   });
 
   final List<Mesh> world;
@@ -204,6 +252,9 @@ class CornerScenePainter extends CustomPainter {
 
   /// 0 -> unsolved, 1 -> fully solved. Drives the warm bloom.
   final double glow;
+
+  /// Which light this room is lit by. See [Ambience].
+  final Ambience ambience;
   final List<Offset> motes;
 
   @override
@@ -236,15 +287,15 @@ class CornerScenePainter extends CustomPainter {
     ], size, k, o);
 
     canvas.drawPath(floor, Paint()..color = const Color(0xFF0C0C10));
-    canvas.drawPath(wallA, Paint()..color = _wallLo);
-    canvas.drawPath(wallB, Paint()..color = _wallLo);
+    canvas.drawPath(wallA, Paint()..color = ambience.wall);
+    canvas.drawPath(wallB, Paint()..color = ambience.wall);
 
     // Two lights, pooling behind the sculpture. This is the whole mood, and
     // it is what gives the shadows a lit surface to be dark against.
     final centre = project(const V3(0, 0, 0), size, k, o);
     for (final spot in [
-      (project(const V3(-kWall, 0.9, 0.1), size, k, o), wallA, _warm),
-      (project(const V3(0.1, 0.9, -kWall), size, k, o), wallB, _cool),
+      (project(const V3(-kWall, 0.9, 0.1), size, k, o), wallA, ambience.lamp),
+      (project(const V3(0.1, 0.9, -kWall), size, k, o), wallB, ambience.lamp2),
     ]) {
       canvas.save();
       canvas.clipPath(spot.$2);
@@ -259,8 +310,8 @@ class CornerScenePainter extends CustomPainter {
             [
               Color.lerp(_wallHi, spot.$3, 0.20 + glow * 0.32)!,
               Color.lerp(_wallHi, spot.$3, 0.07 + glow * 0.10)!,
-              Color.lerp(_wallHi, _wallLo, 0.72)!,
-              _wallLo.withValues(alpha: 0.0),
+              Color.lerp(_wallHi, ambience.wall, 0.72)!,
+              ambience.wall.withValues(alpha: 0.0),
             ],
             // A tighter core with a longer tail. The old two-stop ramp fell off
             // evenly and read as a flat disc; a lamp is bright in a small
@@ -316,7 +367,8 @@ class CornerScenePainter extends CustomPainter {
     }
 
     // ---- dust in the beam -------------------------------------------------
-    final mote = Paint()..color = _warm.withValues(alpha: 0.05 + glow * 0.07);
+    final mote =
+        Paint()..color = ambience.lamp.withValues(alpha: 0.05 + glow * 0.07);
     for (final m in motes) {
       canvas.drawCircle(
           Offset(m.dx * size.width, m.dy * size.height), 1.1, mote);
