@@ -19,18 +19,41 @@ void main() {
   });
 
   test('chapter boundaries actually track hinge count', () {
-    // Chapter 1 is the no-joint chapter. If the generator ever emits a hinged
-    // sculpture there, the chapter names become a lie.
-    for (var i = chapterStarts[0]; i < chapterEnd(0); i++) {
+    // ⚠️ Assert against the SOURCE lists, not chapter indices. allLevels is no
+    // longer generatedLevels in order — the Hare is spliced in at index 3 — so
+    // `generatedLevels[chapterIndex]` now reads a different level than it
+    // names, and would keep passing while checking the wrong thing.
+    const generatedNoJoint = 12;
+    for (var i = 0; i < generatedNoJoint; i++) {
       expect(generatedLevels[i].hasHinge, isFalse,
-          reason: 'level ${i + 1} is in CHAPTER I but has a joint');
+          reason: 'generated ${i + 1} must have no joint');
     }
     // Only chapters I-III are generated; CHAPTER IV is hand-authored organic
     // forms and is deliberately not bound by the hinge progression.
-    for (var i = chapterStarts[1]; i < generatedLevels.length; i++) {
+    for (var i = generatedNoJoint; i < generatedLevels.length; i++) {
       expect(generatedLevels[i].hasHinge, isTrue,
-          reason: 'level ${i + 1} is past CHAPTER I but has no joint');
+          reason: 'generated ${i + 1} is past the no-joint run but has none');
     }
+    // The promise the chapter NAME makes: CHAPTER I is "ROTATION", so nothing
+    // in it may have a joint — authored levels included.
+    for (var i = chapterStarts[0]; i < chapterEnd(0); i++) {
+      expect(allLevels[i].hasHinge, isFalse,
+          reason: 'level ${i + 1} is in CHAPTER I but has a joint');
+    }
+  });
+
+  test('the free chapter shows what the game actually is', () {
+    // The recognition moment — an abstract sculpture resolving into something
+    // nameable — is the whole pitch. It used to start at level 37: behind the
+    // paywall, after 36 generated box arrangements. A new player and a
+    // competition judge would both have finished the free chapter without
+    // ever seeing it.
+    final free = allLevels.sublist(chapterStarts[0], chapterEnd(0));
+    expect(free.contains(hareLevel), isTrue,
+        reason: 'CHAPTER I is all abstractions again — the free chapter no '
+            'longer demonstrates the thing the game is for');
+    expect(free.indexOf(hareLevel), lessThan(6),
+        reason: 'the payoff has drifted late inside the free chapter');
   });
 
   test('a star needs a solve, and the cuts are ordered', () {

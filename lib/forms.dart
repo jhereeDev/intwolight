@@ -76,18 +76,30 @@ final _handle = Mesh.prism(
   0.05,
 );
 
+/// ⚠️ Deliberately NOT in [formLevels]. This one is spliced into CHAPTER I at
+/// level 4 — see [allLevels].
+///
+/// The recognition moment is the entire pitch of this game: a sculpture that
+/// reads as nothing becomes, unmistakably, a hare. It used to live at level
+/// **37** — behind the paywall, after 36 generated box arrangements. So a new
+/// player, and a competition judge playing the free chapter, would never once
+/// see the thing that makes this different from a geometry exercise.
+///
+/// A hare is also the *easiest* form to aim, not the hardest: knowing what
+/// you're looking for is help, not difficulty. It belongs early.
+final hareLevel = Level(
+  name: 'Hare',
+  hint: 'Two ears, two shadows.',
+  boxes: [Box.form(_hare)],
+  solution: const Pose(-1.05, 0.24, 0),
+);
+
 final formLevels = <Level>[
   Level(
     name: 'Pear',
     hint: 'Not every shape is a box.',
     boxes: [Box.form(_pear)],
     solution: const Pose(0.74, 0.30, 0),
-  ),
-  Level(
-    name: 'Hare',
-    hint: 'Two ears, two shadows.',
-    boxes: [Box.form(_hare)],
-    solution: const Pose(-1.05, 0.24, 0),
   ),
   Level(
     name: 'Vessel',
@@ -100,9 +112,22 @@ final formLevels = <Level>[
   ),
 ];
 
-/// Everything playable, in order. Generated levels first, then the authored
-/// organic chapter.
-final allLevels = <Level>[...generatedLevels, ...formLevels, ...silhouetteLevels];
+/// Everything playable, in order.
+///
+/// Not a plain concatenation any more: the Hare is lifted out of CHAPTER IV
+/// and planted at index 3 — level 4 — so the player meets a recognisable form
+/// three levels after learning to rotate, instead of thirty-six.
+///
+/// ⚠️ This order is the save format. `Progress` keys stars by index, so moving
+/// a level shifts every star after it onto the wrong puzzle. Bump `_key` in
+/// progress.dart when this list is reordered.
+final allLevels = <Level>[
+  ...generatedLevels.take(3),
+  hareLevel,
+  ...generatedLevels.skip(3),
+  ...formLevels,
+  ...silhouetteLevels,
+];
 
 // ---------------------------------------------------------------------------
 // CHAPTER V — SILHOUETTES

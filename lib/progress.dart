@@ -5,10 +5,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'forms.dart';
 
 /// Chapter boundaries, derived from how many joints the sculptures have.
-/// Read off levels.g.dart rather than assumed: 1–12 have no hinge, 13–27 have
-/// one, 28–36 mix one and two. Note that makes chapter 3 *mixed*, not "two
-/// hinges" as the early notes claimed.
-const chapterStarts = [0, 12, 27, 36, 39];
+/// Read off levels.g.dart rather than assumed: generated 1–12 have no hinge,
+/// 13–27 have one, 28–36 mix one and two. Note that makes chapter 3 *mixed*,
+/// not "two hinges" as the early notes claimed.
+///
+/// ⚠️ Every boundary past the first is shifted by one against those generated
+/// numbers, because the Hare is spliced into CHAPTER I at index 3 (see
+/// [allLevels]). CHAPTER I is therefore 13 levels, not 12. Chapter I stays the
+/// no-joint chapter — the Hare is pure rotation, which is why it could go
+/// there at all.
+const chapterStarts = [0, 13, 28, 37, 39];
 
 const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS', 'SILHOUETTES'];
 
@@ -41,7 +47,11 @@ class Progress {
   Progress(this._best);
 
   final Map<int, double> _best;
-  static const _key = 'best_v1';
+  /// ⚠️ Bumped from `best_v1` when the Hare moved into CHAPTER I. Stars are
+  /// keyed by level index, so a reorder would silently reattribute every star
+  /// after the insertion point to the wrong puzzle. Bumping drops old progress
+  /// instead, which is the honest trade while the game is still pre-release.
+  static const _key = 'best_v2';
 
   static Future<Progress> load() async {
     final p = await SharedPreferences.getInstance();
