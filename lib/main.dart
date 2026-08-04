@@ -96,6 +96,18 @@ class _PlayScreenState extends State<PlayScreen>
 
   bool _wasSolved = false;
 
+  /// Whether the finish panel is up. Deliberately NOT just "is solved".
+  ///
+  /// The panel blocks the scene, so showing it the instant the pose crosses
+  /// the threshold would freeze every attempt at its *worst* passing score —
+  /// you always travel through 1-star precision on the way into the basin, so
+  /// three stars would be unreachable by construction. Instead the solve fires
+  /// its chord and glow immediately, and the panel waits for the player to
+  /// stop adjusting. Keep easing in and it stays away; settle and it arrives.
+  bool _panel = false;
+  Timer? _settle;
+  static const _settleDelay = Duration(milliseconds: 900);
+
   /// The wordless teach: a ghost hand that drifts until the player drags.
   bool _touched = false;
 
@@ -127,6 +139,7 @@ class _PlayScreenState extends State<PlayScreen>
     // the last improvement.
     widget.progress.flush();
     _glow.dispose();
+    _settle?.cancel();
     _audio.dispose();
     super.dispose();
   }
@@ -141,7 +154,9 @@ class _PlayScreenState extends State<PlayScreen>
       _targetB = unionOutline2D(_rt.targetShadowsB());
       _wasSolved = false;
       _glow.value = 0;
+      _panel = false;
     });
+    _settle?.cancel();
     // Without this the drone would still be blooming from the level just
     // solved while the next one sits untouched.
     _audio.proximity(math.min(_score.a, _score.b), solved: _score.solved);
@@ -166,6 +181,16 @@ class _PlayScreenState extends State<PlayScreen>
     // reason to punish someone for keeping at it.
     if (score.solved) {
       widget.progress.record(_index, math.min(score.a, score.b));
+    }
+    // Every pose change restarts the clock, so the panel only ever appears
+    // once the player has actually stopped.
+    _settle?.cancel();
+    if (score.solved) {
+      _settle = Timer(_settleDelay, () {
+        if (mounted) setState(() => _panel = true);
+      });
+    } else if (_panel) {
+      _panel = false;
     }
     setState(() {
       _pose = p;
@@ -235,29 +260,34 @@ class _PlayScreenState extends State<PlayScreen>
               onReset: () => _apply(const Pose(0, 0, 0)),
             ),
 
-            // The panel waits for the glow to finish so the moment lands
-            // before the UI asks for a decision.
-            Align(
-              alignment: Alignment.bottomCenter,
+            // The room is finished, so taps stop here. Being able to keep
+            // dragging under the old panel read as the game not having ended,
+            // and it was what let the star count wobble.
+            Positioned.fill(
               child: IgnorePointer(
-                ignoring: g < 0.95,
-                child: AnimatedSlide(
-                  offset: Offset(0, g > 0.95 ? 0 : 1),
-                  duration: const Duration(milliseconds: 340),
-                  curve: Curves.easeOutCubic,
-                  child: AnimatedOpacity(
-                    opacity: g > 0.95 ? 1 : 0,
-                    duration: const Duration(milliseconds: 220),
-                    child: _SolvePanel(
-                      // Both from the best, so easing in only ever makes the
-                      // numbers go UP, and they agree with the map.
-                      stars: starsForScore(widget.progress.bestOf(_index)),
-                      precision: widget.progress.bestOf(_index),
-                      isLast: _index >= allLevels.length - 1,
-                      onNext: _index < allLevels.length - 1
-                          ? () => _load(_index + 1)
-                          : null,
-                      onMap: () => Navigator.of(context).pop(),
+                ignoring: !_panel,
+                child: AnimatedOpacity(
+                  opacity: _panel ? 1 : 0,
+                  duration: const Duration(milliseconds: 260),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {},
+                    child: ColoredBox(
+                      color: const Color(0xF008080A),
+                      child: Center(
+                        child: _SolvePanel(
+                          // Both from the best, and by now the pose has been
+                          // still for a beat, so these are final.
+                          stars: starsForScore(widget.progress.bestOf(_index)),
+                          precision: widget.progress.bestOf(_index),
+                          isLast: _index >= allLevels.length - 1,
+                          onNext: _index < allLevels.length - 1
+                              ? () => _load(_index + 1)
+                              : null,
+                          onAgain: () => _apply(const Pose(0, 0, 0)),
+                          onMap: () => Navigator.of(context).pop(),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -405,31 +435,15 @@ class _Hud extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        // The solve panel takes the bottom of the screen when it slides in.
-        // Lift the working controls clear of it rather than letting them
-        // overlap: the dial used to sit ON TOP of the panel's NEXT button and
-        // swallow its taps, and the panel's own text says "keep easing in for
-        // another star" — which is a lie if the hinge is buried underneath.
-        AnimatedPadding(
-          duration: const Duration(milliseconds: 340),
-          curve: Curves.easeOutCubic,
-          padding: EdgeInsets.only(bottom: glow > 0.95 ? kSolvePanelLift : 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        if (hinge != null) _HingeDial(value: hinge!, onChanged: onHinge),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 22, top: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (hinge != null)
-                _HingeDial(value: hinge!, onChanged: onHinge),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 22, top: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _Meter(value: a),
-                    const SizedBox(width: 26),
-                    _Meter(value: b),
-                  ],
-                ),
-              ),
+              _Meter(value: a),
+              const SizedBox(width: 26),
+              _Meter(value: b),
             ],
           ),
         ),
@@ -513,15 +527,6 @@ class _HingeDial extends StatelessWidget {
 }
 
 
-/// How far the working controls lift to clear the solve panel.
-///
-/// ponytail: a measured constant, not a real measurement. It tracks
-/// `_SolvePanel`'s content height (padding 48 + title + stars + match line +
-/// the star hint + button row ≈ 232). If that panel grows, this has to grow
-/// with it or the dial slides back under NEXT. The upgrade, if it ever drifts,
-/// is to measure the panel with a GlobalKey and drive this from its real size.
-const double kSolvePanelLift = 232;
-
 /// Shown when both walls lock. Reports what was earned and offers the only two
 /// moves worth offering — onward, or back to the map.
 ///
@@ -534,27 +539,24 @@ class _SolvePanel extends StatelessWidget {
     required this.precision,
     required this.isLast,
     required this.onNext,
+    required this.onAgain,
     required this.onMap,
   });
 
   final int stars;
   final double precision;
   final bool isLast;
-  final VoidCallback? onNext, onMap;
+  final VoidCallback? onNext, onAgain, onMap;
 
   @override
   Widget build(BuildContext context) {
+    // No background of its own any more. It used to be a bottom sheet, so it
+    // carried a gradient that faded into the scene; centred on a scrim that
+    // gradient just looked like a smudge. The scrim is the background now.
     return Container(
       width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 340),
       padding: const EdgeInsets.fromLTRB(24, 22, 24, 26),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0x0008080A), Color(0xF008080A), Color(0xFF08080A)],
-          stops: [0, 0.45, 1],
-        ),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -594,46 +596,54 @@ class _SolvePanel extends StatelessWidget {
           ),
           if (stars < 3) ...[
             const SizedBox(height: 6),
-            const Text('keep easing in for another star',
+            const Text('play again to place it more precisely',
                 style: TextStyle(
                     fontSize: 11, letterSpacing: 1, color: Colors.white24)),
           ],
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: onMap,
-                  child: const Text('MAP',
-                      style: TextStyle(
-                          fontSize: 12,
-                          letterSpacing: 3,
-                          color: Colors.white38)),
-                ),
+          const SizedBox(height: 24),
+          // Stacked and full width, not a row. Three peers, one per line, in
+          // the order a player wants them: onward, again, out.
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE0A82E),
+                foregroundColor: const Color(0xFF16120A),
+                disabledBackgroundColor: Colors.white10,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4)),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 48,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFE0A82E),
-                      foregroundColor: const Color(0xFF16120A),
-                      disabledBackgroundColor: Colors.white10,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4)),
-                    ),
-                    onPressed: onNext,
-                    child: Text(isLast ? 'THE END' : 'NEXT ROOM',
-                        style: const TextStyle(
-                            fontSize: 12,
-                            letterSpacing: 3,
-                            fontWeight: FontWeight.w600)),
-                  ),
-                ),
+              onPressed: onNext,
+              child: Text(isLast ? 'THE END' : 'NEXT ROOM',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      letterSpacing: 3,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white24),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4)),
               ),
-            ],
+              onPressed: onAgain,
+              child: const Text('PLAY AGAIN',
+                  style: TextStyle(
+                      fontSize: 12, letterSpacing: 3, color: Colors.white70)),
+            ),
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: onMap,
+            child: const Text('MAP',
+                style: TextStyle(
+                    fontSize: 12, letterSpacing: 3, color: Colors.white38)),
           ),
         ],
       ),
