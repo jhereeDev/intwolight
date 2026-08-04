@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'audio.dart';
+import 'challenge.dart';
 import 'daily.dart';
 import 'geom.dart';
 import 'level.dart';
@@ -91,6 +92,7 @@ class InTwoLightsApp extends StatelessWidget {
                       // case: a daily room has no tomorrow to walk into.
                       levels: [dailyLevelFor(now)],
                       progressKey: (_) => dailyDayNumber(now),
+                      challenge: true,
                       shareTitle: 'Daily · '
                           '${now.year}-${now.month.toString().padLeft(2, '0')}'
                           '-${now.day.toString().padLeft(2, '0')}',
@@ -126,6 +128,7 @@ class PlayScreen extends StatefulWidget {
     this.shareTitle,
     this.initialPose,
     this.suppressPanel = false,
+    this.challenge = false,
   });
 
   final int index;
@@ -153,6 +156,12 @@ class PlayScreen extends StatefulWidget {
   /// Press-kit capture only. A solved room is the picture worth taking; the
   /// panel sliding over it 900ms later is not.
   final bool suppressPanel;
+
+  /// Share the *puzzle* rather than the solved room.
+  ///
+  /// On for the daily, because everyone gets the same room that day and a
+  /// screenshot of yours solved is the answer key. See lib/challenge.dart.
+  final bool challenge;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -283,17 +292,23 @@ class _PlayScreenState extends State<PlayScreen>
     if (_sharing) return;
     setState(() => _sharing = true);
     try {
-      final boundary = _sceneKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      // 3x so it survives being viewed full-screen on someone else's phone.
-      final image = await boundary.toImage(pixelRatio: 3);
-      final png = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-      if (png == null) return;
+      Uint8List? bytes;
+      if (widget.challenge) {
+        bytes = await renderChallengeCard(_levels[_index]);
+      } else {
+        final boundary = _sceneKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+        if (boundary == null) return;
+        // 3x so it survives being viewed full-screen on someone else's phone.
+        final image = await boundary.toImage(pixelRatio: 3);
+        final png = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        bytes = png?.buffer.asUint8List();
+      }
+      if (bytes == null) return;
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/in-two-lights.png');
-      await file.writeAsBytes(png.buffer.asUint8List(), flush: true);
+      await file.writeAsBytes(bytes, flush: true);
       await SharePlus.instance
           .share(ShareParams(files: [XFile(file.path)], text: _shareText));
     } catch (_) {
@@ -305,10 +320,17 @@ class _PlayScreenState extends State<PlayScreen>
   }
 
   String get _shareText {
-    final n = starsForScore(widget.progress.bestOf(_keyOf(_index)));
+    final best = widget.progress.bestOf(_keyOf(_index));
+    final n = starsForScore(best);
     final stars = '★' * n + '☆' * (3 - n);
-    return '${widget.shareTitle ?? 'Level ${_index + 1}'}  $stars'
-        '   ·   In Two Lights';
+    final what = widget.shareTitle ?? 'Level ${_index + 1}';
+    if (!widget.challenge) return '$what  $stars   ·   In Two Lights';
+    // A challenge names the score to beat and says the room is shared, which
+    // is the only reason beating it means anything.
+    return 'In Two Lights · $what · I matched '
+        '${(best * 100).toStringAsFixed(1)}% on both walls. '
+        'Same room for everyone today — your turn. '
+        'https://jhereedev.github.io/intwolight/';
   }
 
   @override
