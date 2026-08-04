@@ -199,6 +199,59 @@ final _fish = _figure([
   ], 0.42),
 ], _fishPose);
 
+const _catPose = Pose(-0.54, 0.28, 0);
+const _boatPose = Pose(0.46, -0.30, 0);
+const _mothPose = Pose(0.34, 0.42, 0);
+
+/// Sitting cat. The ears are the whole level: two small triangles are what
+/// turn "a blob on a blob" into an animal, and they are the first thing to
+/// disappear if the parts are scaled down.
+final _cat = _figure([
+  (_ellipse(0.00, -0.34, 0.42, 0.46), 0.00), // body
+  (_ellipse(0.02, 0.34, 0.30, 0.26), -0.52), // head
+  ([                                         // left ear
+    const V2(-0.27, 0.46), const V2(-0.31, 0.86), const V2(0.02, 0.56),
+  ], 0.66),
+  ([                                         // right ear
+    const V2(0.31, 0.46), const V2(0.35, 0.86), const V2(0.04, 0.56),
+  ], -0.88),
+  ([                                         // tail, curling up and away
+    const V2(0.36, -0.74), const V2(0.84, -0.56), const V2(0.94, -0.06),
+    const V2(0.72, -0.12), const V2(0.66, -0.46), const V2(0.38, -0.90),
+  ], 0.40),
+], _catPose);
+
+/// Not an animal, on purpose. Two ducks and a fish in a row starts to read as
+/// a theme rather than a trick, and the point is that ANY figure can be hidden
+/// in scattered shards.
+final _boat = _figure([
+  ([                                         // hull
+    const V2(-0.78, -0.44), const V2(0.78, -0.44),
+    const V2(0.50, -0.82), const V2(-0.52, -0.82),
+  ], 0.00),
+  ([                                         // mast
+    const V2(-0.05, -0.40), const V2(0.05, -0.40),
+    const V2(0.05, 0.92), const V2(-0.05, 0.92),
+  ], -0.70),
+  ([                                         // mainsail
+    const V2(0.10, 0.86), const V2(0.10, -0.36), const V2(0.78, -0.36),
+  ], 0.58),
+  ([                                         // jib
+    const V2(-0.10, 0.74), const V2(-0.10, -0.36), const V2(-0.64, -0.36),
+  ], -0.34),
+], _boatPose);
+
+/// Bilaterally symmetric, which makes it the most forgiving figure in the
+/// chapter to read and the least forgiving to get subtly wrong — an offset
+/// wing reads as damage rather than as style.
+final _moth = _figure([
+  (_ellipse(0.00, 0.00, 0.08, 0.52), 0.00),     // body
+  (_ellipse(-0.46, 0.30, 0.42, 0.36), -0.60),   // upper left
+  (_ellipse(0.46, 0.30, 0.42, 0.36), 0.72),     // upper right
+  (_ellipse(-0.38, -0.34, 0.34, 0.28), 0.36),   // lower left
+  (_ellipse(0.38, -0.34, 0.34, 0.28), -0.94),   // lower right
+], _mothPose);
+
 final silhouetteLevels = <Level>[
   Level(
     name: 'Duck',
@@ -211,5 +264,23 @@ final silhouetteLevels = <Level>[
     hint: 'Scattered, then whole.',
     boxes: [Box.form(_fish)],
     solution: _fishPose,
+  ),
+  Level(
+    name: 'Cat',
+    hint: 'Look for the ears.',
+    boxes: [Box.form(_cat)],
+    solution: _catPose,
+  ),
+  Level(
+    name: 'Boat',
+    hint: 'Not everything hidden here is alive.',
+    boxes: [Box.form(_boat)],
+    solution: _boatPose,
+  ),
+  Level(
+    name: 'Moth',
+    hint: 'Both halves, or neither.',
+    boxes: [Box.form(_moth)],
+    solution: _mothPose,
   ),
 ];
