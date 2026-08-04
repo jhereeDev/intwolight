@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#08080A</color>
+    <!-- The launch window, before Flutter draws. Must match
+         scaffoldBackgroundColor or the app flashes white into a near-black
+         game — which is the first thing every player and every reviewer
+         sees. -->
+    <color name="launch_background">#08080A</color>
 </resources>

@@ -17,6 +17,7 @@ import 'forms.dart';
 import 'map_screen.dart';
 import 'progress.dart';
 import 'scene.dart';
+import 'shots.dart';
 import 'store.dart';
 
 Future<void> main() async {
@@ -33,6 +34,17 @@ Future<void> main() async {
   // Store reports unlocked until it knows otherwise, so the map is correct
   // either way and simply re-renders when the entitlement arrives.
   unawaited(store.init());
+
+  if (shotMode) {
+    runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(useMaterial3: true).copyWith(
+        scaffoldBackgroundColor: const Color(0xFF08080A),
+      ),
+      home: ShotRunner(store: store),
+    ));
+    return;
+  }
 
   runApp(InTwoLightsApp(progress: progress, daily: daily, store: store));
 }
@@ -111,6 +123,8 @@ class PlayScreen extends StatefulWidget {
     this.levels,
     this.progressKey,
     this.shareTitle,
+    this.initialPose,
+    this.suppressPanel = false,
   });
 
   final int index;
@@ -130,6 +144,14 @@ class PlayScreen extends StatefulWidget {
   /// number; the daily passes its own, because a daily level's `name` is its
   /// position in the pool and not the date anyone played it.
   final String? shareTitle;
+
+  /// Press-kit capture only — open at this pose instead of the origin. See
+  /// lib/shots.dart.
+  final Pose? initialPose;
+
+  /// Press-kit capture only. A solved room is the picture worth taking; the
+  /// panel sliding over it 900ms later is not.
+  final bool suppressPanel;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -270,6 +292,16 @@ class _PlayScreenState extends State<PlayScreen>
     _audio.start();
     _audio.proximity(math.min(_score.a, _score.b), solved: _score.solved);
     _armHint();
+    final start = widget.initialPose;
+    if (start != null) {
+      // A pose arrived without anyone dragging, so the wordless onboarding
+      // hint is moot — and left on, it drifts across every press-kit capture
+      // looking like a stray control.
+      _touched = true;
+      // Through _apply, so the glow, the chord and the star record all happen
+      // exactly as they would for a player who got there themselves.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _apply(start));
+    }
   }
 
   // Fixed so dust doesn't reshuffle every frame.
@@ -339,7 +371,7 @@ class _PlayScreenState extends State<PlayScreen>
     // Every pose change restarts the clock, so the panel only ever appears
     // once the player has actually stopped.
     _settle?.cancel();
-    if (score.solved) {
+    if (score.solved && !widget.suppressPanel) {
       _settle = Timer(_settleDelay, () {
         if (mounted) setState(() => _panel = true);
       });
