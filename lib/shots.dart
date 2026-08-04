@@ -5,6 +5,7 @@ import 'forms.dart';
 import 'level.dart';
 import 'main.dart';
 import 'map_screen.dart';
+import 'menagerie.dart';
 import 'progress.dart';
 import 'store.dart';
 
@@ -27,13 +28,15 @@ const bool shotMode = bool.fromEnvironment('SHOT');
 /// Levels are authored *as* a solved pose, so a solved room needs no solver —
 /// just the pose the level already stores.
 class Shot {
-  const Shot(this.label, {this.level, this.pose, this.map = false});
+  const Shot(this.label,
+      {this.level, this.pose, this.map = false, this.menagerie = false});
   final String label;
   final int? level;
 
   /// null means "use the level's own solution", i.e. show it solved.
   final Pose? pose;
   final bool map;
+  final bool menagerie;
 }
 
 const shots = <Shot>[
@@ -44,6 +47,9 @@ const shots = <Shot>[
   // Mid-puzzle and unsolved, so the mechanic is visible rather than the prize.
   Shot('03-working', level: 20, pose: Pose(0.9, -0.35, 0.4)),
   Shot('04-map', map: true),
+  // The cabinet, partly filled — an empty one shows nothing and a full one
+  // shows no reason to keep playing.
+  Shot('05-found', menagerie: true),
 ];
 
 /// Plausible progress, so the map reads as a game in play rather than an empty
@@ -51,6 +57,10 @@ const shots = <Shot>[
 /// evening, which is what a store screenshot is supposed to depict.
 Progress _sampleCampaign() => Progress({
       for (var i = 0; i < 16; i++) i: [0.99, 0.96, 0.93][i % 3],
+      // A few figures found and most not: the cabinet only reads as a
+      // collection when some slots are still open.
+      40: 0.98, // Duck
+      43: 0.97, // Moth
     });
 
 Progress _sampleDaily() {
@@ -75,7 +85,9 @@ class _ShotRunnerState extends State<ShotRunner> {
   @override
   Widget build(BuildContext context) {
     final shot = shots[_i % shots.length];
-    final Widget screen = shot.map
+    final Widget screen = shot.menagerie
+        ? MenagerieScreen(progress: _campaign)
+        : shot.map
         ? MapScreen(
             progress: _campaign,
             daily: _daily,

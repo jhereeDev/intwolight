@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'forms.dart';
 import 'daily.dart';
+import 'menagerie.dart';
 import 'progress.dart';
 import 'store.dart';
 import 'unlock_screen.dart';
@@ -191,6 +192,24 @@ class MapScreenState extends State<MapScreen> {
                       },
                     ),
                     const Spacer(),
+                    GestureDetector(
+                      onTap: () async {
+                        await Navigator.of(context).push<void>(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                MenagerieScreen(progress: widget.progress),
+                          ),
+                        );
+                        if (mounted) setState(() {});
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 14, left: 6),
+                        child: Icon(Icons.auto_awesome_mosaic_outlined,
+                            size: 15,
+                            color: Colors.white.withValues(alpha: 0.45)),
+                      ),
+                    ),
                     Icon(Icons.star_rounded,
                         size: 13, color: _amber.withValues(alpha: 0.8)),
                     const SizedBox(width: 5),
