@@ -50,12 +50,16 @@ class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.progress,
+    required this.daily,
     required this.store,
     required this.onPlay,
     required this.onDaily,
   });
 
   final Progress progress;
+
+  /// The daily ledger, keyed by day number rather than level index.
+  final Progress daily;
   final Store store;
 
   /// Returns the level index chosen; the caller pushes the play screen.
@@ -172,7 +176,9 @@ class MapScreenState extends State<MapScreen> {
                     ),
                     const SizedBox(width: 14),
                     _TodayChip(
-                      done: widget.progress.solved(dailyDayNumber(DateTime.now())),
+                      done: widget.daily.solved(dailyDayNumber(DateTime.now())),
+                      streak:
+                          widget.daily.streakEndingAt(dailyDayNumber(DateTime.now())),
                       onTap: () async {
                         await widget.onDaily();
                         if (mounted) setState(() {});
@@ -203,8 +209,13 @@ class MapScreenState extends State<MapScreen> {
 /// small: the campaign is still the game, and this is the thing that brings
 /// someone back on day 42 when the campaign is done.
 class _TodayChip extends StatelessWidget {
-  const _TodayChip({required this.done, required this.onTap});
+  const _TodayChip(
+      {required this.done, required this.streak, required this.onTap});
   final bool done;
+
+  /// Consecutive days. Shown from the first one, because a streak that only
+  /// appears at 3 is invisible exactly when it would start mattering.
+  final int streak;
   final VoidCallback onTap;
 
   @override
@@ -233,6 +244,24 @@ class _TodayChip extends StatelessWidget {
                   color: done ? _amber : Colors.white54,
                 ),
               ),
+              if (streak > 0) ...[
+                const SizedBox(width: 7),
+                Container(
+                  width: 1,
+                  height: 9,
+                  color: Colors.white24,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  '$streak',
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: 1,
+                    fontWeight: FontWeight.w600,
+                    color: done ? _amber : Colors.white38,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

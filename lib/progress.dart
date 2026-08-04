@@ -79,6 +79,23 @@ class Progress {
   int starsOf(int i) => _best.containsKey(i) ? starsForScore(_best[i]!) : 0;
   bool solved(int i) => _best.containsKey(i);
 
+  /// Consecutive solved days ending at [today]. Only meaningful on the daily
+  /// ledger, where the key IS the day number.
+  ///
+  /// If today is not solved yet the count runs from **yesterday**, so a player
+  /// who has not played today still sees the chain they are protecting rather
+  /// than a zero. Showing 0 until they play would make the streak feel already
+  /// lost every morning, which is the opposite of what a streak is for.
+  int streakEndingAt(int today) {
+    var day = solved(today) ? today : today - 1;
+    var n = 0;
+    while (solved(day)) {
+      n++;
+      day--;
+    }
+    return n;
+  }
+
   int get solvedCount => _best.length;
 
   int get totalStars {

@@ -54,6 +54,7 @@ class InTwoLightsApp extends StatelessWidget {
         home: Builder(
           builder: (context) => MapScreen(
             progress: progress,
+            daily: daily,
             store: store,
             onDaily: () {
               // Resolved at tap time, not at build time: the app can sit open
@@ -160,6 +161,29 @@ class _PlayScreenState extends State<PlayScreen>
 
   /// The wordless teach: a ghost hand that drifts until the player drags.
   bool _touched = false;
+
+  /// Poses to step back through.
+  ///
+  /// Pushed at the START of a gesture, not per frame: a drag is one decision,
+  /// however many frames it took, and a frame-level undo would need dozens of
+  /// taps to escape a single wrong move. Reset clears it — reset already means
+  /// "forget everything", so leaving a trail behind it would be a lie.
+  ///
+  /// ponytail: capped list, oldest dropped. 24 gestures is far past what
+  /// anyone reaches for; an unbounded one is a slow leak on a long session.
+  final List<Pose> _undoStack = [];
+  static const _undoLimit = 24;
+
+  void _mark() {
+    _undoStack.add(_pose);
+    if (_undoStack.length > _undoLimit) _undoStack.removeAt(0);
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty) return;
+    final p = _undoStack.removeLast();
+    _apply(p);
+  }
 
   /// A hint is a whisper, not a menu.
   ///
@@ -291,6 +315,7 @@ class _PlayScreenState extends State<PlayScreen>
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onPanStart: (_) {
+                  _mark();
                   if (!_touched) setState(() => _touched = true);
                 },
                 onPanUpdate: (d) => _apply(Pose(
@@ -333,13 +358,18 @@ class _PlayScreenState extends State<PlayScreen>
               // hint, it is a spoiler for a puzzle already finished.
               showHint: _hint && !score.solved,
               onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
+              onHingeStart: _mark,
               // Best earned, NOT the live pose. Showing the live value made
               // the count fall back down when a solved player kept moving,
               // while the map went on showing the best — the same level
               // reading 1 star here and 2 there. Reported from a playtest.
               stars: starsForScore(widget.progress.bestOf(_keyOf(_index))),
               onBack: () => Navigator.of(context).pop(),
-              onReset: () => _apply(const Pose(0, 0, 0)),
+              onUndo: _undoStack.isEmpty ? null : _undo,
+              onReset: () {
+                _undoStack.clear();
+                _apply(const Pose(0, 0, 0));
+              },
             ),
 
             // The room is finished, so taps stop here. Being able to keep
@@ -463,10 +493,12 @@ class _Hud extends StatelessWidget {
     required this.glow,
     required this.hinge,
     required this.onHinge,
+    required this.onHingeStart,
     required this.hintText,
     required this.showHint,
     required this.stars,
     required this.onBack,
+    required this.onUndo,
     required this.onReset,
   });
 
@@ -477,13 +509,14 @@ class _Hud extends StatelessWidget {
   /// null when the level has no joint — the control simply isn't there.
   final double? hinge;
   final ValueChanged<double> onHinge;
+  final VoidCallback onHingeStart;
 
   /// Always supplied, only sometimes visible. Rendering it at zero opacity
   /// rather than omitting it keeps the row's height reserved, so the dial and
   /// meters don't jump when the hint fades in a minute into a level.
   final String hintText;
   final bool showHint;
-  final VoidCallback? onBack, onReset;
+  final VoidCallback? onBack, onUndo, onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -520,6 +553,7 @@ class _Hud extends StatelessWidget {
                       size: 13, color: Color(0xFFE0A82E)),
                 ),
               const SizedBox(width: 8),
+              _GhostButton(icon: Icons.undo_rounded, onTap: onUndo),
               _GhostButton(icon: Icons.refresh_rounded, onTap: onReset),
             ],
           ),
@@ -541,7 +575,9 @@ class _Hud extends StatelessWidget {
             ),
           ),
         ),
-        if (hinge != null) _HingeDial(value: hinge!, onChanged: onHinge),
+        if (hinge != null)
+          _HingeDial(
+              value: hinge!, onChanged: onHinge, onStart: onHingeStart),
         Padding(
           padding: const EdgeInsets.only(bottom: 22, top: 6),
           child: Row(
@@ -606,9 +642,11 @@ class _GhostButton extends StatelessWidget {
 
 /// The hinge, restyled off Material's default Slider.
 class _HingeDial extends StatelessWidget {
-  const _HingeDial({required this.value, required this.onChanged});
+  const _HingeDial(
+      {required this.value, required this.onChanged, required this.onStart});
   final double value;
   final ValueChanged<double> onChanged;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -626,6 +664,8 @@ class _HingeDial extends StatelessWidget {
             value: value,
             min: -1.6,
             max: 1.6,
+            // Marked on grab, not per tick — the whole slide is one decision.
+            onChangeStart: (_) => onStart(),
             onChanged: onChanged,
           ),
         ),
