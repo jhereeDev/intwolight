@@ -8,6 +8,8 @@ import 'map_screen.dart';
 import 'menagerie.dart';
 import 'progress.dart';
 import 'store.dart';
+import 'workshop.dart';
+import 'workshop_screen.dart';
 
 /// Press-kit capture mode. Off unless built with `--dart-define=SHOT=true`,
 /// so the whole file tree-shakes out of a normal release — the same pattern
@@ -29,7 +31,11 @@ const bool shotMode = bool.fromEnvironment('SHOT');
 /// just the pose the level already stores.
 class Shot {
   const Shot(this.label,
-      {this.level, this.pose, this.map = false, this.menagerie = false});
+      {this.level,
+      this.pose,
+      this.map = false,
+      this.menagerie = false,
+      this.workshop = false});
   final String label;
   final int? level;
 
@@ -37,6 +43,7 @@ class Shot {
   final Pose? pose;
   final bool map;
   final bool menagerie;
+  final bool workshop;
 }
 
 const shots = <Shot>[
@@ -50,6 +57,9 @@ const shots = <Shot>[
   // The cabinet, partly filled — an empty one shows nothing and a full one
   // shows no reason to keep playing.
   Shot('05-found', menagerie: true),
+  // The Workshop mid-build, so the piece bar and the depth dial are both
+  // visible doing something.
+  Shot('06-workshop', workshop: true),
 ];
 
 /// Plausible progress, so the map reads as a game in play rather than an empty
@@ -85,7 +95,10 @@ class _ShotRunnerState extends State<ShotRunner> {
   @override
   Widget build(BuildContext context) {
     final shot = shots[_i % shots.length];
-    final Widget screen = shot.menagerie
+    final Widget screen = shot.workshop
+        ? WorkshopScreen(
+            puzzle: workshopPuzzles[1], suppressPanel: true)
+        : shot.menagerie
         ? MenagerieScreen(progress: _campaign)
         : shot.map
         ? MapScreen(

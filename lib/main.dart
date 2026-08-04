@@ -19,6 +19,7 @@ import 'progress.dart';
 import 'scene.dart';
 import 'shots.dart';
 import 'store.dart';
+import 'widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -614,7 +615,7 @@ class _Hud extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 10, 8, 0),
           child: Row(
             children: [
-              _GhostButton(
+              GhostButton(
                   icon: Icons.keyboard_arrow_left_rounded, onTap: onBack),
               const SizedBox(width: 2),
               Text(
@@ -641,8 +642,8 @@ class _Hud extends StatelessWidget {
                       size: 13, color: Color(0xFFE0A82E)),
                 ),
               const SizedBox(width: 8),
-              _GhostButton(icon: Icons.undo_rounded, onTap: onUndo),
-              _GhostButton(icon: Icons.refresh_rounded, onTap: onReset),
+              GhostButton(icon: Icons.undo_rounded, onTap: onUndo),
+              GhostButton(icon: Icons.refresh_rounded, onTap: onReset),
             ],
           ),
         ),
@@ -664,16 +665,16 @@ class _Hud extends StatelessWidget {
           ),
         ),
         if (hinge != null)
-          _HingeDial(
+          AxisDial(
               value: hinge!, onChanged: onHinge, onStart: onHingeStart),
         Padding(
           padding: const EdgeInsets.only(bottom: 22, top: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _Meter(value: a),
+              Meter(value: a),
               const SizedBox(width: 26),
-              _Meter(value: b),
+              Meter(value: b),
             ],
           ),
         ),
@@ -683,82 +684,9 @@ class _Hud extends StatelessWidget {
 }
 
 /// A bar, not a number. The player needs "how close", not two decimal places.
-class _Meter extends StatelessWidget {
-  const _Meter({required this.value});
-  final double value;
 
-  @override
-  Widget build(BuildContext context) {
-    final hit = value >= kSolveThreshold;
-    // Rescale so the visible travel lives where the puzzle actually is.
-    final t = ((value - 0.35) / (1 - 0.35)).clamp(0.0, 1.0);
-    return SizedBox(
-      width: 74,
-      height: 3,
-      child: Stack(
-        children: [
-          Container(color: Colors.white.withValues(alpha: 0.08)),
-          FractionallySizedBox(
-            widthFactor: t,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              color: hit
-                  ? const Color(0xFFE0A82E)
-                  : Colors.white.withValues(alpha: 0.32),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GhostButton extends StatelessWidget {
-  const _GhostButton({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, size: 20),
-        color: Colors.white38,
-        disabledColor: Colors.white10,
-        splashRadius: 20,
-      );
-}
 
 /// The hinge, restyled off Material's default Slider.
-class _HingeDial extends StatelessWidget {
-  const _HingeDial(
-      {required this.value, required this.onChanged, required this.onStart});
-  final double value;
-  final ValueChanged<double> onChanged;
-  final VoidCallback onStart;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 46),
-        child: SliderTheme(
-          data: SliderThemeData(
-            trackHeight: 2,
-            activeTrackColor: Colors.white24,
-            inactiveTrackColor: Colors.white10,
-            thumbColor: const Color(0xFFE0A82E),
-            overlayColor: const Color(0x22E0A82E),
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-          ),
-          child: Slider(
-            value: value,
-            min: -1.6,
-            max: 1.6,
-            // Marked on grab, not per tick — the whole slide is one decision.
-            onChangeStart: (_) => onStart(),
-            onChanged: onChanged,
-          ),
-        ),
-      );
-}
 
 
 /// Shown when both walls lock. Reports what was earned and offers the only two

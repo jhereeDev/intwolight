@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'forms.dart';
 import 'daily.dart';
 import 'menagerie.dart';
+import 'workshop.dart';
+import 'workshop_screen.dart';
 import 'progress.dart';
 import 'store.dart';
 import 'unlock_screen.dart';
@@ -206,6 +208,21 @@ class MapScreenState extends State<MapScreen> {
                       child: Padding(
                         padding: const EdgeInsets.only(right: 14, left: 6),
                         child: Icon(Icons.auto_awesome_mosaic_outlined,
+                            size: 15,
+                            color: Colors.white.withValues(alpha: 0.45)),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              WorkshopScreen(puzzle: workshopPuzzles.first),
+                        ),
+                      ),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 14),
+                        child: Icon(Icons.handyman_outlined,
                             size: 15,
                             color: Colors.white.withValues(alpha: 0.45)),
                       ),
