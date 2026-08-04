@@ -218,6 +218,24 @@ class _PlayScreenState extends State<PlayScreen>
                 child: IgnorePointer(child: _DragHint()),
               ),
 
+            _Hud(
+              index: _index,
+              total: allLevels.length,
+              a: score.a,
+              b: score.b,
+              glow: g,
+              hinge: lv.hasHinge ? _pose.hinge : null,
+              onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
+              stars: score.solved
+                  ? starsForScore(math.min(score.a, score.b))
+                  : 0,
+              onBack: () => Navigator.of(context).pop(),
+              onNext: _index < allLevels.length - 1
+                  ? () => _load(_index + 1)
+                  : null,
+              onReset: () => _apply(const Pose(0, 0, 0)),
+            ),
+
             // The panel waits for the glow to finish so the moment lands
             // before the UI asks for a decision.
             Align(
@@ -244,24 +262,6 @@ class _PlayScreenState extends State<PlayScreen>
                   ),
                 ),
               ),
-            ),
-
-            _Hud(
-              index: _index,
-              total: allLevels.length,
-              a: score.a,
-              b: score.b,
-              glow: g,
-              hinge: lv.hasHinge ? _pose.hinge : null,
-              onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
-              stars: score.solved
-                  ? starsForScore(math.min(score.a, score.b))
-                  : 0,
-              onBack: () => Navigator.of(context).pop(),
-              onNext: _index < allLevels.length - 1
-                  ? () => _load(_index + 1)
-                  : null,
-              onReset: () => _apply(const Pose(0, 0, 0)),
             ),
           ],
         ),
@@ -409,16 +409,31 @@ class _Hud extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        if (hinge != null)
-          _HingeDial(value: hinge!, onChanged: onHinge),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 22, top: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        // The solve panel takes the bottom of the screen when it slides in.
+        // Lift the working controls clear of it rather than letting them
+        // overlap: the dial used to sit ON TOP of the panel's NEXT button and
+        // swallow its taps, and the panel's own text says "keep easing in for
+        // another star" — which is a lie if the hinge is buried underneath.
+        AnimatedPadding(
+          duration: const Duration(milliseconds: 340),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.only(bottom: glow > 0.95 ? kSolvePanelLift : 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _Meter(value: a),
-              const SizedBox(width: 26),
-              _Meter(value: b),
+              if (hinge != null)
+                _HingeDial(value: hinge!, onChanged: onHinge),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 22, top: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _Meter(value: a),
+                    const SizedBox(width: 26),
+                    _Meter(value: b),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -501,6 +516,15 @@ class _HingeDial extends StatelessWidget {
       );
 }
 
+
+/// How far the working controls lift to clear the solve panel.
+///
+/// ponytail: a measured constant, not a real measurement. It tracks
+/// `_SolvePanel`'s content height (padding 48 + title + stars + match line +
+/// the star hint + button row ≈ 232). If that panel grows, this has to grow
+/// with it or the dial slides back under NEXT. The upgrade, if it ever drifts,
+/// is to measure the panel with a GlobalKey and drive this from its real size.
+const double kSolvePanelLift = 232;
 
 /// Shown when both walls lock. Reports what was earned and offers the only two
 /// moves worth offering — onward, or back to the map.
