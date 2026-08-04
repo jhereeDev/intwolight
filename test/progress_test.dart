@@ -56,6 +56,23 @@ void main() {
         reason: 'the payoff has drifted late inside the free chapter');
   });
 
+  test('every level has something to say when a player is stuck', () {
+    for (var i = 0; i < allLevels.length; i++) {
+      // generator.dart builds Levels with `hint: ''` by default, so a band
+      // whose hint was never set would ship a level that fades in an empty
+      // string after 60 seconds — the feature failing silently, which is the
+      // only way a cosmetic feature ever fails.
+      expect(allLevels[i].hint.trim(), isNotEmpty,
+          reason: 'level ${i + 1} has no hint');
+      // Hints surface only after a minute of being stuck, by which point the
+      // player has been dragging the whole time. CHAPTER I shipped
+      // 'Drag to rotate.' as its hint for a while: a line that tells someone
+      // what they are already doing is worse than saying nothing.
+      expect(allLevels[i].hint, isNot('Drag to rotate.'),
+          reason: 'level ${i + 1} answers a question nobody stuck is asking');
+    }
+  });
+
   test('a star needs a solve, and the cuts are ordered', () {
     // Below the solve threshold nothing is earned, however close.
     expect(starsForScore(kSolveThreshold - 0.001), 0);

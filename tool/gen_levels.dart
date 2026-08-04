@@ -11,7 +11,11 @@ import 'package:in_two_lights/generator.dart';
 import 'package:in_two_lights/geom.dart';
 
 const _chapters = [
-  (seed: 1101, wanted: 12, hinges: 0, hint: 'Drag to rotate.'),
+  // ⚠️ Not 'Drag to rotate.' — that was a tutorial line, and hints only ever
+  // surface after a player has been stuck for a while, by which point they
+  // have been dragging for a minute. A hint has to say something they don't
+  // already know, so this one says what CHAPTER I is actually about.
+  (seed: 1101, wanted: 12, hinges: 0, hint: 'Both walls, one pose.'),
   (seed: 2202, wanted: 12, hinges: 1, hint: 'One arm folds.'),
   (seed: 3303, wanted: 12, hinges: 2, hint: 'Two arms fold.'),
 ];

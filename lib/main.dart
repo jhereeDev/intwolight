@@ -111,6 +111,29 @@ class _PlayScreenState extends State<PlayScreen>
   /// The wordless teach: a ghost hand that drifts until the player drags.
   bool _touched = false;
 
+  /// A hint is a whisper, not a menu.
+  ///
+  /// It arrives on its own once the player has clearly been stuck, and there
+  /// is no button to summon one. A game with this little interface should not
+  /// grow a help system, and a hint you have to ask for is a hint that makes
+  /// you admit something first. The lines are nudges, never solutions — "Two
+  /// ears, two shadows" tells you what to look for, not where to put it.
+  bool _hint = false;
+  Timer? _hintTimer;
+
+  /// ponytail: a guess, and the one number here that wants a real player.
+  /// Too short and it spoils a puzzle someone was enjoying; too long and a
+  /// stuck player has already quit.
+  static const _hintDelay = Duration(seconds: 60);
+
+  void _armHint() {
+    _hintTimer?.cancel();
+    _hint = false;
+    _hintTimer = Timer(_hintDelay, () {
+      if (mounted) setState(() => _hint = true);
+    });
+  }
+
   /// The room's tone. Held for as long as this screen lives, its loudness
   /// tracking the weaker wall — the game's only warmer/colder channel.
   final GameAudio _audio = GameAudio();
@@ -120,6 +143,7 @@ class _PlayScreenState extends State<PlayScreen>
     super.initState();
     _audio.start();
     _audio.proximity(math.min(_score.a, _score.b), solved: _score.solved);
+    _armHint();
   }
 
   // Fixed so dust doesn't reshuffle every frame.
@@ -140,6 +164,7 @@ class _PlayScreenState extends State<PlayScreen>
     widget.progress.flush();
     _glow.dispose();
     _settle?.cancel();
+    _hintTimer?.cancel();
     _audio.dispose();
     super.dispose();
   }
@@ -157,6 +182,9 @@ class _PlayScreenState extends State<PlayScreen>
       _panel = false;
     });
     _settle?.cancel();
+    // A fresh room starts the clock again — carrying the last level's hint
+    // over would hand it out on sight.
+    _armHint();
     // Without this the drone would still be blooming from the level just
     // solved while the next one sits untouched.
     _audio.proximity(math.min(_score.a, _score.b), solved: _score.solved);
@@ -250,6 +278,10 @@ class _PlayScreenState extends State<PlayScreen>
               b: score.b,
               glow: g,
               hinge: lv.hasHinge ? _pose.hinge : null,
+              hintText: lv.hint,
+              // Withdrawn the moment it is solved — at that point it is not a
+              // hint, it is a spoiler for a puzzle already finished.
+              showHint: _hint && !score.solved,
               onHinge: (v) => _apply(Pose(_pose.yaw, _pose.pitch, v)),
               // Best earned, NOT the live pose. Showing the live value made
               // the count fall back down when a solved player kept moving,
@@ -381,6 +413,8 @@ class _Hud extends StatelessWidget {
     required this.glow,
     required this.hinge,
     required this.onHinge,
+    required this.hintText,
+    required this.showHint,
     required this.stars,
     required this.onBack,
     required this.onReset,
@@ -393,6 +427,12 @@ class _Hud extends StatelessWidget {
   /// null when the level has no joint — the control simply isn't there.
   final double? hinge;
   final ValueChanged<double> onHinge;
+
+  /// Always supplied, only sometimes visible. Rendering it at zero opacity
+  /// rather than omitting it keeps the row's height reserved, so the dial and
+  /// meters don't jump when the hint fades in a minute into a level.
+  final String hintText;
+  final bool showHint;
   final VoidCallback? onBack, onReset;
 
   @override
@@ -435,6 +475,22 @@ class _Hud extends StatelessWidget {
           ),
         ),
         const Spacer(),
+        // Slow on purpose. It should read as the room offering something,
+        // not as a notification arriving.
+        AnimatedOpacity(
+          opacity: showHint ? 1 : 0,
+          duration: const Duration(milliseconds: 1400),
+          curve: Curves.easeIn,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(32, 0, 32, 12),
+            child: Text(
+              hintText,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 11, letterSpacing: 2, color: Colors.white30),
+            ),
+          ),
+        ),
         if (hinge != null) _HingeDial(value: hinge!, onChanged: onHinge),
         Padding(
           padding: const EdgeInsets.only(bottom: 22, top: 6),

@@ -12,7 +12,7 @@ const generatedLevels = <Level>[
   // #1  approach 0.036 · correlation 0.53
   Level(
     name: '1',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1981, 0.5433, 0.2714)),
       Box(center: V3(0.0000, 0.8693, 0.0000), half: V3(0.5657, 0.2973, 0.1630)),
@@ -22,7 +22,7 @@ const generatedLevels = <Level>[
   // #2  approach 0.032 · correlation 0.67
   Level(
     name: '2',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2819, 0.9151, 0.2049)),
       Box(center: V3(0.0000, -1.4641, 0.0000), half: V3(0.5019, 0.2459, 0.1603)),
@@ -32,7 +32,7 @@ const generatedLevels = <Level>[
   // #3  approach 0.024 · correlation 0.75
   Level(
     name: '3',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.1808, 0.7408, 0.2545)),
       Box(center: V3(0.0000, -1.1852, 0.0000), half: V3(0.7225, 0.2407, 0.1675)),
@@ -42,7 +42,7 @@ const generatedLevels = <Level>[
   // #4  approach 0.024 · correlation 1.00
   Level(
     name: '4',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2815, 0.6951, 0.2760)),
       Box(center: V3(0.0000, 1.1121, 0.0000), half: V3(0.7379, 0.2445, 0.2706)),
@@ -52,7 +52,7 @@ const generatedLevels = <Level>[
   // #5  approach 0.020 · correlation 0.63
   Level(
     name: '5',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2942, 0.9218, 0.2053)),
       Box(center: V3(0.0000, 1.4749, 0.0000), half: V3(0.1998, 0.2637, 0.7969)),
@@ -62,7 +62,7 @@ const generatedLevels = <Level>[
   // #6  approach 0.016 · correlation 0.80
   Level(
     name: '6',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2087, 0.6995, 0.1685)),
       Box(center: V3(0.0000, 1.1192, 0.0000), half: V3(0.1904, 0.1909, 0.8483)),
@@ -72,7 +72,7 @@ const generatedLevels = <Level>[
   // #7  approach 0.012 · correlation 0.50
   Level(
     name: '7',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.6386, 0.2974, 0.2118)),
       Box(center: V3(1.0217, 0.0000, 0.0000), half: V3(0.2413, 0.2623, 0.8173)),
@@ -82,7 +82,7 @@ const generatedLevels = <Level>[
   // #8  approach 0.008 · correlation 1.00
   Level(
     name: '8',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.5326, 0.1902, 0.2346)),
       Box(center: V3(0.8521, 0.0000, 0.0000), half: V3(0.2481, 0.2310, 0.5857)),
@@ -93,7 +93,7 @@ const generatedLevels = <Level>[
   // #9  approach 0.008 · correlation 0.67
   Level(
     name: '9',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2441, 0.2660, 0.9456)),
       Box(center: V3(0.0000, 0.0000, -1.5130), half: V3(0.2264, 0.7250, 0.1875)),
@@ -105,7 +105,7 @@ const generatedLevels = <Level>[
   // #10  approach 0.008 · correlation 0.22
   Level(
     name: '10',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.2752, 0.6838, 0.2387)),
       Box(center: V3(0.0000, -1.0941, 0.0000), half: V3(0.7422, 0.1811, 0.1971)),
@@ -116,7 +116,7 @@ const generatedLevels = <Level>[
   // #11  approach 0.008 · correlation 0.40
   Level(
     name: '11',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.8576, 0.1869, 0.2172)),
       Box(center: V3(1.3722, 0.0000, 0.0000), half: V3(0.2585, 0.7483, 0.1611)),
@@ -126,7 +126,7 @@ const generatedLevels = <Level>[
   // #12  approach 0.004 · correlation 1.00
   Level(
     name: '12',
-    hint: 'Drag to rotate.',
+    hint: 'Both walls, one pose.',
     boxes: [
       Box(center: V3(0.0000, 0.0000, 0.0000), half: V3(0.7057, 0.2375, 0.2854)),
       Box(center: V3(-1.1292, 0.0000, 0.0000), half: V3(0.2092, 0.2671, 0.5037)),
