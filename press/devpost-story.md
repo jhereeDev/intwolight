@@ -10,20 +10,29 @@ That tension is the whole game, and the entire build was a bet on one question: 
 
 ## What it does
 
-An abstract sculpture of hinged low-poly arms hangs in the corner where two perpendicular walls meet, lit from two directions. Each wall shows a target silhouette. You drag to rotate the form and bend it at its joints. The level is solved when **both** cast shadows match their targets at once.
+A sculpture of hinged low-poly arms hangs in the corner where two perpendicular walls meet, lit from two directions. Each wall shows a target silhouette. You drag to rotate the form and bend it at its joints. The room is solved when **both** cast shadows match their targets at once.
 
-No words. No timer. No hints. 36 levels across three chapters, sorted by how many joints the form has.
+No words. No timer. No hints for the first minute.
+
+- **47 rooms across five chapters** — Rotation, The Joint, Two Joints, Forms, Silhouettes. The opening four are hand-authored so a new player's first minutes are designed rather than sampled.
+- **Endless mode** — rooms generated on the device, numbered from 1, running as deep as you want to go. Room 340 is the same room for everyone, so a depth is a claim you can check.
+- **A daily room** — one puzzle a day, the same one for every player.
+- **Stars on precision, not speed.** A timer would turn a contemplative puzzle into a twitch one.
 
 ## How I built it
 
-Flutter 3.44.8 / Dart 3.12.2, no game engine. The geometry is all hand-rolled:
+Flutter 3.44.8 / Dart 3.12.2, no game engine. The geometry is hand-rolled:
 
-- **Projection** — each box's corners are rotated into world space and projected onto two perpendicular planes.
-- **Silhouettes** — a convex hull per box per wall, then every hull is drawn into a single 64×64 occupancy mask, so unions come for free.
-- **Scoring** — intersection-over-union between that mask and the target's, thresholded at 0.92.
-- **Levels** — a generator samples candidate sculptures, rejection-samples the bad ones, and writes out `levels.g.dart`.
+- **Meshes** — every piece is a triangle mesh. Lathed forms, extruded prisms and unions, built by ear clipping. (This replaced an earlier convex-hull approach, which could not represent anything concave — no ducks, no moths.)
+- **Projection** — vertices rotate into world space and project onto two perpendicular planes. Two axis-aligned lights make wall A's shadow `(z,y)` and wall B's `(x,y)`, which is what keeps the two constraints genuinely independent.
+- **Scoring** — intersection-over-union against the target on a 64×64 occupancy raster, thresholded at 0.92.
+- **Latching** — a solve is *entered* at 0.92 but only *given up* below 0.89. Without that gap a finger resting on the glass wanders across the threshold, the chord re-fires and the glow reverses, and the player stops trusting the silhouette they just reasoned out and starts stabilising a number.
+- **Determinism** — endless uses a hand-written splitmix64 PRNG, not `dart:math`. `Random`'s algorithm is not contractual, and rooms are generated at runtime on the player's device; an SDK upgrade could otherwise silently change everyone's room 340.
+- **Generation off the UI thread** — a hinged room costs about a second to generate on a desktop and several times that on a phone, so endless generates in an isolate and prefetches room N+1 while you play room N.
 
-The decision that made everything else cheap: **levels are authored as a solved pose, and the target silhouettes are derived from it.** Every level is therefore solvable by construction. Generating a new one is nearly free, and two tests assert that all 36 score 1.0 at their solution and that none open pre-solved.
+The decision that made everything else cheap: **rooms are authored as a solved pose, and the target silhouettes are derived from it.** Every room is therefore solvable by construction. 94 tests, including ones that assert every sampled endless room scores 1.0 at its solution and none opens pre-solved.
+
+RevenueCat gates a one-time unlock past the free first chapter. The entitlement check **fails open** — if the store can't be reached, the player keeps what they paid for. An outage should never paywall someone who already bought it.
 
 ## Challenges I ran into
 
@@ -42,7 +51,7 @@ Both ranked it backwards. The correlation metric would have thrown out the singl
 
 So I shipped **no difficulty filter at all**. The code is still there, deliberately unused, with a comment explaining why. An unvalidated metric that discards your best work is worse than no metric, and I'd rather carry a known gap than a confident wrong number.
 
-I also dropped a dependency I'd designed around. The original plan used polygon boolean operations for shadow unions. Rasterising to a grid instead removed the dependency entirely, made unions free, and quantises scores at about ±0.01 — far inside the solve threshold.
+That gap got more expensive when I shipped endless mode, which generates from the same unvalidated bands. It is now the thing a real playtest has to settle, and I can't settle it myself: I know the generator, the solution families and the transformations, so my own solve time measures my familiarity rather than the room's difficulty.
 
 ## Accomplishments that I'm proud of
 
@@ -56,10 +65,12 @@ I passed it seven days early, on the hinge level. The answer to the second quest
 
 ## What I learned
 
-That a negative result is worth shipping. Two failed metrics told me more about my own game than a working one would have — mainly that I don't yet know what makes one of these levels hard, and that no amount of arithmetic substitutes for handing it to a person.
+That a negative result is worth shipping. Two failed metrics told me more about my own game than a working one would have — mainly that I don't yet know what makes one of these rooms hard, and that no amount of arithmetic substitutes for handing it to a person.
+
+I also learned to distrust a correction that comes from reasoning when the original reading came from evidence. I talked myself out of a build failure's actual cause once, and the next build proved the evidence right.
 
 ## What's next for In Two Lights
 
-- **Real corner geometry and lighting** — shadow falloff, a spotlight cone, dust in the beam. Right now it's a puzzle; it isn't yet a place.
-- **Progression** — a level map, chapters, and stars awarded on precision rather than speed.
-- **A one-time chapter unlock through RevenueCat**, designed as an in-world transition rather than a modal.
+- **Five naive playtesters**, screen-recorded, with the timestamp marked where they first say *"oh — fixing that one breaks the other."* If that moment lands later than ninety seconds, the opening is wrong and no amount of content further in compensates.
+- **Difficulty ordering rebuilt from what they do**, not from an unvalidated number.
+- **App Store release.** It's on TestFlight now.
