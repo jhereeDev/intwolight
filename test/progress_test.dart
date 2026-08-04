@@ -20,7 +20,7 @@ void main() {
 
   test('chapter boundaries actually track hinge count', () {
     // ⚠️ Assert against the SOURCE lists, not chapter indices. allLevels is no
-    // longer generatedLevels in order — the Hare is spliced in at index 3 — so
+    // longer generatedLevels in order — the Cat is spliced in at index 3 — so
     // `generatedLevels[chapterIndex]` now reads a different level than it
     // names, and would keep passing while checking the wrong thing.
     const generatedNoJoint = 12;
@@ -49,10 +49,10 @@ void main() {
     // competition judge would both have finished the free chapter without
     // ever seeing it.
     final free = allLevels.sublist(chapterStarts[0], chapterEnd(0));
-    expect(free.contains(hareLevel), isTrue,
+    expect(free.contains(catLevel), isTrue,
         reason: 'CHAPTER I is all abstractions again — the free chapter no '
             'longer demonstrates the thing the game is for');
-    expect(free.indexOf(hareLevel), lessThan(6),
+    expect(free.indexOf(catLevel), lessThan(6),
         reason: 'the payoff has drifted late inside the free chapter');
   });
 

@@ -40,7 +40,7 @@ const shots = <Shot>[
   // The differentiator first: scattered shards, a clean moth on the wall.
   Shot('01-silhouette', level: 43),
   // The recognition moment inside the FREE chapter.
-  Shot('02-hare', level: 3),
+  Shot('02-cat', level: 3),
   // Mid-puzzle and unsolved, so the mechanic is visible rather than the prize.
   Shot('03-working', level: 20, pose: Pose(0.9, -0.35, 0.4)),
   Shot('04-map', map: true),

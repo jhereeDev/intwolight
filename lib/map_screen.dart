@@ -157,10 +157,16 @@ class MapScreenState extends State<MapScreen> {
               child: Container(
                 height: 90,
                 decoration: const BoxDecoration(
+                  // Opaque THROUGH the title, then fade. A straight fade from
+                  // the top edge leaves the header band only ~70% opaque where
+                  // the text sits, so a chapter label scrolling underneath
+                  // reads straight through it and collides with the title —
+                  // visible in the first real store capture of this screen.
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [_bg, Color(0x0008080A)],
+                    colors: [_bg, _bg, Color(0x0008080A)],
+                    stops: [0, 0.55, 1],
                   ),
                 ),
                 alignment: Alignment.topLeft,
