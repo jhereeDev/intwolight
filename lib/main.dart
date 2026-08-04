@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'audio.dart';
 import 'geom.dart';
 import 'level.dart';
 import 'forms.dart';
@@ -98,6 +99,17 @@ class _PlayScreenState extends State<PlayScreen>
   /// The wordless teach: a ghost hand that drifts until the player drags.
   bool _touched = false;
 
+  /// The room's tone. Held for as long as this screen lives, its loudness
+  /// tracking the weaker wall — the game's only warmer/colder channel.
+  final GameAudio _audio = GameAudio();
+
+  @override
+  void initState() {
+    super.initState();
+    _audio.start();
+    _audio.proximity(math.min(_score.a, _score.b), solved: _score.solved);
+  }
+
   // Fixed so dust doesn't reshuffle every frame.
   late final List<Offset> _motes = [
     for (var i = 0; i < 26; i++)
@@ -115,30 +127,40 @@ class _PlayScreenState extends State<PlayScreen>
     // the last improvement.
     widget.progress.flush();
     _glow.dispose();
+    _audio.dispose();
     super.dispose();
   }
 
-  void _load(int i) => setState(() {
-        _index = i.clamp(0, allLevels.length - 1);
-        _rt = LevelRuntime(allLevels[_index]);
-        _pose = const Pose(0, 0, 0);
-        _score = _rt.score(_pose);
-        _targetA = unionOutline2D(_rt.targetShadowsA());
-        _targetB = unionOutline2D(_rt.targetShadowsB());
-        _wasSolved = false;
-        _glow.value = 0;
-      });
+  void _load(int i) {
+    setState(() {
+      _index = i.clamp(0, allLevels.length - 1);
+      _rt = LevelRuntime(allLevels[_index]);
+      _pose = const Pose(0, 0, 0);
+      _score = _rt.score(_pose);
+      _targetA = unionOutline2D(_rt.targetShadowsA());
+      _targetB = unionOutline2D(_rt.targetShadowsB());
+      _wasSolved = false;
+      _glow.value = 0;
+    });
+    // Without this the drone would still be blooming from the level just
+    // solved while the next one sits untouched.
+    _audio.proximity(math.min(_score.a, _score.b), solved: _score.solved);
+  }
 
   void _apply(Pose p) {
     final score = _rt.score(p);
     if (score.solved && !_wasSolved) {
       _wasSolved = true;
       HapticFeedback.mediumImpact();
+      // Chord and glow are both 620ms, fired together so the arrival is one
+      // event rather than a sound chasing a light.
+      _audio.solved();
       _glow.forward();
     } else if (!score.solved && _wasSolved) {
       _wasSolved = false;
       _glow.reverse();
     }
+    _audio.proximity(math.min(score.a, score.b), solved: score.solved);
     // Record continuously while solved, so easing further into the basin
     // earns the third star. Stars are precision, not speed — there is no
     // reason to punish someone for keeping at it.
