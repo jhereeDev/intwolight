@@ -49,9 +49,27 @@ class Store extends ChangeNotifier {
   String? _price;
   String? _lastError;
 
-  /// True when chapters beyond the first should be playable — either because
-  /// the unlock was bought, or because the store could not be reached at all.
-  bool get unlocked => _forceLock ? false : (_entitled || !_configured);
+  /// True when chapters beyond the first should be playable — because the
+  /// unlock was bought, or because there is no way to buy it right now.
+  ///
+  /// ⚠️ **"Nothing to sell" counts as unreachable.** This used to fail open
+  /// only when the SDK was *unconfigured*, which missed the state this app is
+  /// actually in before the Paid Applications agreement goes Active: keys
+  /// valid, SDK configured, offering empty because no product exists yet. That
+  /// combination locked 28 of 41 levels behind a button that says
+  /// "STORE UNAVAILABLE" and does nothing — a broken game, and a guaranteed
+  /// Guideline 3.1.1 rejection for App Review, who would have hit exactly that.
+  bool get unlocked => computeUnlocked(
+      entitled: _entitled, canBuy: canBuy, forceLock: _forceLock);
+
+  /// Pulled out as a pure function because it is the money path, and the
+  /// instance version depends on SDK state no test can construct.
+  static bool computeUnlocked({
+    required bool entitled,
+    required bool canBuy,
+    required bool forceLock,
+  }) =>
+      forceLock ? false : (entitled || !canBuy);
 
   bool get configured => _configured;
 
