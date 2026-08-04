@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_two_lights/endless.dart';
 import 'package:in_two_lights/level.dart';
+import 'package:in_two_lights/progress.dart';
 import 'package:in_two_lights/rng.dart';
 
 /// Endless rooms are generated on the device and shared by number, so the two
@@ -62,6 +63,8 @@ void main() {
     expect(a.solution.yaw, isNot(b.solution.yaw));
   });
 
+  ledgerTests();
+
   test('the joint count ramps and then holds', () {
     expect(bandFor(1), 0);
     expect(bandFor(8), 0);
@@ -84,5 +87,31 @@ void main() {
           reason: 'room $n opens already solved');
       expect(lv.hasHinge, bandFor(n) > 0, reason: 'room $n joint count');
     }
+  });
+}
+
+/// The endless ledger is keyed by DEPTH, not by level index. Getting that wrong
+/// would have room 7 and campaign level 7 overwrite each other.
+void ledgerTests() {
+  test('the three ledgers use different keys', () {
+    final keys = {
+      Progress.campaignKey,
+      Progress.dailyKey,
+      Progress.endlessKey,
+    };
+    expect(keys.length, 3, reason: 'two ledgers sharing a key would collide');
+  });
+
+  test('deepestRoom is the furthest solved, not the count', () {
+    expect(Progress(const {}, storeKey: Progress.endlessKey).deepestRoom, 0);
+    // Solved 1, 2 and 40: depth is 40, not 3.
+    final p = Progress({1: 0.95, 2: 0.99, 40: 0.93},
+        storeKey: Progress.endlessKey);
+    expect(p.deepestRoom, 40);
+  });
+
+  test('endless resumes after the deepest room, not at it', () {
+    final p = Progress({1: 0.95, 2: 0.95}, storeKey: Progress.endlessKey);
+    expect(p.deepestRoom + 1, 3);
   });
 }

@@ -31,6 +31,9 @@ Future<void> main() async {
   final progress = await Progress.load();
   // Separate ledger: the campaign indexes levels, the daily indexes days.
   final daily = await Progress.load(storeKey: Progress.dailyKey);
+  // Third ledger: the campaign indexes levels, the daily indexes days, endless
+  // indexes depth. Sharing a key would have room 7 overwrite level 7.
+  final endless = await Progress.load(storeKey: Progress.endlessKey);
   final store = Store();
   // Not awaited: a slow or unreachable store must never delay first paint.
   // Store reports unlocked until it knows otherwise, so the map is correct
@@ -48,7 +51,8 @@ Future<void> main() async {
     return;
   }
 
-  runApp(InTwoLightsApp(progress: progress, daily: daily, store: store));
+  runApp(InTwoLightsApp(
+      progress: progress, daily: daily, endless: endless, store: store));
 }
 
 class InTwoLightsApp extends StatelessWidget {
@@ -56,11 +60,13 @@ class InTwoLightsApp extends StatelessWidget {
     super.key,
     required this.progress,
     required this.daily,
+    required this.endless,
     required this.store,
   });
 
   final Progress progress;
   final Progress daily;
+  final Progress endless;
   final Store store;
 
   @override
@@ -74,6 +80,7 @@ class InTwoLightsApp extends StatelessWidget {
           builder: (context) => MapScreen(
             progress: progress,
             daily: daily,
+            endless: endless,
             store: store,
             onDaily: () {
               // Resolved at tap time, not at build time: the app can sit open
@@ -129,6 +136,7 @@ class PlayScreen extends StatefulWidget {
     this.initialPose,
     this.suppressPanel = false,
     this.challenge = false,
+    this.onBeyond,
   });
 
   final int index;
@@ -162,6 +170,13 @@ class PlayScreen extends StatefulWidget {
   /// On for the daily, because everyone gets the same room that day and a
   /// screenshot of yours solved is the answer key. See lib/challenge.dart.
   final bool challenge;
+
+  /// What NEXT does at the end of [levels].
+  ///
+  /// Null for the campaign and the daily, where the end of the list really is
+  /// the end and the panel should say THE END. Endless supplies one room at a
+  /// time and uses this to fetch the next, so the list is never "finished".
+  final VoidCallback? onBeyond;
 
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -499,6 +514,7 @@ class _PlayScreenState extends State<PlayScreen>
             _Hud(
               index: _index,
               total: _levels.length,
+              label: widget.onBeyond == null ? null : 'ROOM ${_keyOf(_index)}',
               a: score.a,
               b: score.b,
               glow: g,
@@ -542,7 +558,8 @@ class _PlayScreenState extends State<PlayScreen>
                           // still for a beat, so these are final.
                           stars: starsForScore(widget.progress.bestOf(_keyOf(_index))),
                           precision: widget.progress.bestOf(_keyOf(_index)),
-                          isLast: _index >= _levels.length - 1,
+                          isLast: _index >= _levels.length - 1 &&
+                              widget.onBeyond == null,
                           // Only the daily has a chain; the campaign indexes
                           // levels, so a "streak" there would be meaningless.
                           streak: widget.challenge
@@ -551,7 +568,7 @@ class _PlayScreenState extends State<PlayScreen>
                               : null,
                           onNext: _index < _levels.length - 1
                               ? () => _load(_index + 1)
-                              : null,
+                              : widget.onBeyond,
                           onAgain: () => _apply(const Pose(0, 0, 0)),
                           onShare: _sharing ? null : _share,
                           onMap: () => Navigator.of(context).pop(),
@@ -645,6 +662,7 @@ class _Hud extends StatelessWidget {
   const _Hud({
     required this.index,
     required this.total,
+    required this.label,
     required this.a,
     required this.b,
     required this.glow,
@@ -660,6 +678,9 @@ class _Hud extends StatelessWidget {
   });
 
   final int index, total;
+
+  /// Replaces "n / total" when a room has no denominator — endless.
+  final String? label;
   final double a, b, glow;
   final int stars;
 
@@ -687,7 +708,7 @@ class _Hud extends StatelessWidget {
                   icon: Icons.keyboard_arrow_left_rounded, onTap: onBack),
               const SizedBox(width: 2),
               Text(
-                '${index + 1}'.padLeft(2, '0'),
+                label ?? '${index + 1}'.padLeft(2, '0'),
                 style: TextStyle(
                   fontSize: 13,
                   letterSpacing: 4,
@@ -695,11 +716,13 @@ class _Hud extends StatelessWidget {
                       Colors.white38, const Color(0xFFE0A82E), glow),
                 ),
               ),
-              Text(
-                ' / $total',
-                style: const TextStyle(
-                    fontSize: 13, letterSpacing: 2, color: Colors.white24),
-              ),
+              // Endless has no denominator — "01 / 1" is true and useless.
+              if (label == null)
+                Text(
+                  ' / $total',
+                  style: const TextStyle(
+                      fontSize: 13, letterSpacing: 2, color: Colors.white24),
+                ),
               const Spacer(),
               // Stars appear only once earned — nothing to taunt you with
               // while you're still working.

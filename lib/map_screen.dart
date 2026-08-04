@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'forms.dart';
 import 'daily.dart';
+import 'endless_screen.dart';
 import 'menagerie.dart';
 import 'workshop.dart';
 import 'workshop_screen.dart';
@@ -54,6 +55,7 @@ class MapScreen extends StatefulWidget {
     super.key,
     required this.progress,
     required this.daily,
+    required this.endless,
     required this.store,
     required this.onPlay,
     required this.onDaily,
@@ -63,6 +65,9 @@ class MapScreen extends StatefulWidget {
 
   /// The daily ledger, keyed by day number rather than level index.
   final Progress daily;
+
+  /// The endless ledger, keyed by room number.
+  final Progress endless;
   final Store store;
 
   /// Returns the level index chosen; the caller pushes the play screen.
@@ -152,17 +157,42 @@ class MapScreenState extends State<MapScreen> {
                   await widget.onPlay(i);
                   if (mounted) setState(() {});
                 },
-                child: SizedBox(
-                  width: layout.width,
-                  height: layout.contentHeight,
-                  child: CustomPaint(
-                    painter: _MapPainter(
-                      layout: layout,
-                      progress: widget.progress,
-                      current: _current,
-                      unlocked: _unlocked,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: layout.width,
+                      height: layout.contentHeight,
+                      child: CustomPaint(
+                        painter: _MapPainter(
+                          layout: layout,
+                          progress: widget.progress,
+                          current: _current,
+                          unlocked: _unlocked,
+                        ),
+                      ),
                     ),
-                  ),
+                    // Below the last chapter, because that is what it is: what
+                    // happens after the campaign runs out.
+                    _EndlessCard(
+                      deepest: widget.endless.deepestRoom,
+                      locked: !_unlocked,
+                      onTap: () async {
+                        if (!_unlocked) {
+                          await Navigator.of(context).push<bool>(
+                              MaterialPageRoute(
+                                  fullscreenDialog: true,
+                                  builder: (_) =>
+                                      UnlockScreen(store: widget.store)));
+                        } else {
+                          await Navigator.of(context).push<void>(
+                              MaterialPageRoute(
+                                  builder: (_) => EndlessScreen(
+                                      progress: widget.endless)));
+                        }
+                        if (mounted) setState(() {});
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -540,4 +570,57 @@ class _MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MapPainter old) => true;
+}
+
+
+/// The way out of a finite campaign.
+///
+/// Deliberately a card at the bottom rather than a sixth chapter on the map:
+/// chapters are authored and end, this does not, and drawing it as a chain of
+/// hexagons would promise a shape it does not have.
+class _EndlessCard extends StatelessWidget {
+  const _EndlessCard(
+      {required this.deepest, required this.locked, required this.onTap});
+
+  final int deepest;
+  final bool locked;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(28, 8, 28, 56),
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+            decoration: BoxDecoration(
+              border: Border.all(
+                  color: locked ? Colors.white10 : _amber.withValues(alpha: 0.35)),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'ENDLESS',
+                  style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 6,
+                      color: locked ? Colors.white24 : _amber),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  locked
+                      ? 'Part of the unlock'
+                      : deepest == 0
+                          ? 'Rooms that never run out'
+                          : 'Deepest room $deepest',
+                  style: const TextStyle(
+                      fontSize: 12, letterSpacing: 1, color: Colors.white38),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 }

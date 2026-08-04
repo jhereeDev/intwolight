@@ -66,6 +66,15 @@ class Progress {
   /// Keyed by day number, not pool index — see `daily.dart`.
   static const dailyKey = 'daily_v1';
 
+  /// Keyed by ROOM NUMBER — see `endless.dart`. Never version-bumped on a
+  /// campaign reorder: endless rooms are derived from their number, so room
+  /// 340 is the same puzzle forever and its stars stay valid.
+  static const endlessKey = 'endless_v1';
+
+  /// Furthest room solved, or 0. Endless resumes at the room after this.
+  int get deepestRoom =>
+      _best.keys.isEmpty ? 0 : _best.keys.reduce((a, b) => a > b ? a : b);
+
   static Future<Progress> load({String storeKey = campaignKey}) async {
     final p = await SharedPreferences.getInstance();
     final raw = p.getStringList(storeKey) ?? const [];

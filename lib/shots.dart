@@ -104,6 +104,8 @@ class _ShotRunnerState extends State<ShotRunner> {
         ? MapScreen(
             progress: _campaign,
             daily: _daily,
+            // Press shots want a clean slate, not this device's real depth.
+            endless: Progress(const {}, storeKey: Progress.endlessKey),
             store: widget.store,
             onPlay: (_) async {},
             onDaily: () async {},
