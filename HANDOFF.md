@@ -21,29 +21,52 @@ Verified on the `Jhere` PC, 2026-08-06 — every number below was measured, not 
 | `flutter test` | ✅ **94 passing** |
 | Campaign | **47 levels across 5 chapters** (`chapterStarts = [0, 15, 31, 40, 43]` in `progress.dart`), plus a daily room and endless mode |
 | Free / paid split | CHAPTER I = **15 levels free**, chapters II–V (**32 levels**) behind the one-time RevenueCat unlock |
-| iOS | ✅ **Signing solved 2026-08-04.** Build **#13** succeeded (6m 2s) and uploaded to App Store Connect |
+| iOS | ✅ **Signing solved 2026-08-04.** **15 builds uploaded**, the newest two on Aug 5. All read *Ready to Submit*; the version currently has **#13** attached |
 | Privacy policy | ✅ **live** — `https://jhereedev.github.io/intwolight/privacy.html` returns **200** (re-checked 2026-08-06) |
 
-## 🔴 THE ONLY BLOCKER: two Apple forms and a bank account
+## ✅ The Apple paperwork is DONE. Read this before believing any older note.
 
-Paid Applications is **Pending User Info**. Until it goes Active no product exists, so the
-RevenueCat paywall has nothing to sell — a tester reaching it gets a button that does nothing.
-Five minutes of Jhere's time, unlocking a multi-day Apple process. **There are TWO forms**, both
-tagged "Paid Apps", and completing one does not clear the banner:
+**Checked in the account itself on 2026-08-06, not inferred from a status file:**
 
-1. **U.S. Form W-8BEN** — Part I is filled. Remaining: Line 5 (U.S. TIN) **blank**; Line 9
-   **checked** (resident of the Philippines); Line 10 Article **`8(1)`**, rate **`0`**,
-   ☑️ *Income from the sale of applications*.
-2. **U.S. Certificate of Foreign Status** — Apple's own form, no treaty section. Tick the
-   declaration (no U.S. employees, no U.S. equipment — all true), **Title = `Owner`**.
+| Business → Agreements | |
+|---|---|
+| **Paid Apps Agreement** | ✅ **Active**, Jul 23 2026 – May 17 2027 |
+| Free Apps Agreement | ✅ Active, same dates |
+| Bank account | ✅ **Active** — Philippines, PHP, royalties in USD |
+| **U.S. Form W-8BEN** | ✅ **Active**, submitted **Aug 4 2026** |
+| **U.S. Certificate of Foreign Status** | ✅ **Active**, submitted **Aug 4 2026** |
+| Digital Services Act (account level) | ✅ Active, 27 countries |
 
-> ⚠️ **Article 8, not Article 7.** The Apple-forum advice says "Article 7 paragraph 1", copied from
-> OECD-model treaties. The **US–Philippines treaty is a 1976 agreement with its own numbering**
-> (<https://www.irs.gov/pub/irs-trty/philip.pdf>): Article 7 is *Income from Real Property*,
-> Article 8 is Business Profits, Article 13 is Royalties. Citing Article 7 claims a treaty benefit
-> for rental income on land. Fallback if 8(1) is challenged: `13(2)(a)` at `15`%. Both beat the 30%
-> statutory default that applies if Line 10 is left empty. A wrong entry costs a resubmission,
-> not the account.
+> **This section said the opposite for two days**, and an earlier rewrite of this very file
+> repeated it — because both were built from `status.md` and the repo, and neither opened the
+> account. **The forms were filed on Aug 4 and everything went Active.** The AIOS rule that a
+> `status.md` is a claim rather than a fact exists for precisely this; so does the Article 8 tax
+> research, which is now spent and lives in the git history if it is ever needed again.
+
+**The in-app purchase exists and is configured:** `In Two Lights Pro`,
+product ID **`com.jhere.intwolights.pro`**, non-consumable, priced, available in 175 countries,
+display name "All Chapters", description *"Chapters II–V: 32 more rooms, one payment."*
+Status **Prepare for Submission**. The entitlement string matches `Store.entitlement`
+in `lib/store.dart`.
+
+## 🔴 What actually blocks submission
+
+1. **The IAP has no review screenshot.** `Review Information → Screenshot` is empty and it is
+   required. Apple also states *"your first non-consumable in-app purchase must be submitted with
+   a new app version"* — so this one empty field gates the entire 1.0 submission.
+   **Capture it with `Shot('07-unlock')` in the harness** (see below), never by hand.
+2. **App Privacy is filled in but NOT published.** Every declaration is entered — Purchase History
+   and User ID, both *used for app functionality*, neither linked to identity — and the page still
+   shows a live **Publish** button. Nothing has been submitted to Apple.
+3. **App Review contact information is empty.** Personal data; Jhere enters this.
+4. **DSA trader status is "non-trader" at the app level.** App Information reads *"This developer
+   has identified itself as a non-trader for this app."* The **account-level** DSA registration is
+   Active, but these are different things, and the app is set to sell an IAP into 175 countries
+   including the EU. **Resolve what this means for EU availability before release** — the flow
+   (`/business?collectContactInfo=true`) collects contact details that are then shown publicly, so
+   it is a decision, not a click.
+5. **The version has build 13 attached, but builds 14 and 15 exist** (both uploaded Aug 5 2026,
+   after the last commit). Decide which one ships.
 
 ## Then, in order
 
@@ -61,16 +84,45 @@ tagged "Paid Apps", and completing one does not clear the banner:
 ### Knobs that need a real player, not a terminal
 `_settleDelay` 900ms · `_hintDelay` 60s · the drone's floor/duck/curve in `tool/gen_audio.py`.
 
-## Still gating "Add for Review" on the App Store listing
+## The App Store listing — what is already done
 
-Build #13 is attached, six screenshots at 1242×2688 are in, the description reads 47 rooms, and
-`Sign-in required` is correctly unchecked. **Not done:** App Review contact details (personal data
-— Jhere enters these), App Privacy, Age Rating, Pricing and Availability, and the IAP itself,
-which is blocked by Paid Applications above.
+**Verified in App Store Connect 2026-08-06. Several items this file previously called outstanding
+are finished; do not redo them.**
+
+| | |
+|---|---|
+| Age rating | ✅ **4+**, 172 countries. Brazil ALL, Korea override, Vietnam 00+ |
+| Content rights | ✅ "does not contain, show, or access third-party content" |
+| Pricing and availability | ✅ base **United States (USD)**, price set, **175 countries**, tax category *App Store software* |
+| Screenshots | ✅ 6 of 10, 6.5" display |
+| Description / promo text / keywords | ✅ in, and reading 47 rooms |
+| Privacy policy URL | ✅ live, 200 |
+| `Sign-in required` | ✅ correctly **unchecked** — the game has no accounts |
+| Export compliance | ✅ **not an issue** — all eight builds read *Ready to Submit*, none says "Missing Compliance" |
+
+Everything still outstanding is in the numbered list above.
 
 > ⚠️ **Release option currently reads "Manually release this version"** — set by a misdirected
 > click, not a decision. Defensible (it puts go-live under Jhere's control against a 09-30 window)
 > but it was not intentional. Confirm before submitting.
+
+## Regenerating the IAP review screenshot
+
+```bash
+export PATH="/d/flutter/bin:$PATH"                      # Jhere PC
+flutter emulators --launch Medium_Phone_API_36.0
+flutter run -d emulator-5554 --release --dart-define=SHOT=true
+# tap through to shot 07-unlock, then:
+adb exec-out screencap -p > press/unlock-screen.png
+```
+
+`Shot('07-unlock')` renders the real `UnlockScreen` against `_ShotStore`, a two-getter subclass
+that lives in `lib/shots.dart`. **It exists because a keyless build has nothing to sell**, so the
+genuine screen renders its button as "STORE UNAVAILABLE" — the one thing an IAP review screenshot
+must not show. It grants nothing: `unlocked` is `entitled || !canBuy`, so forcing `canBuy` true
+makes the app *more* locked, and `computeUnlocked` in `store.dart` is untouched. **The money path
+was not modified for a screenshot, and should not be.** Override the price with
+`--dart-define=SHOT_PRICE='$4.99'` when the real tier is decided.
 
 ## Open questions and warnings
 
@@ -88,6 +140,9 @@ which is blocked by Paid Applications above.
   Delete it or re-point it.
 - ⚠️ **`UIRequiresFullScreen` is deprecated** — slated to stop exempting apps on iPadOS 26+. Fine
   for 1.0; after Shipaton it is real iPad landscape or `TARGETED_DEVICE_FAMILY = 1`.
+- ⚠️ **Build warning `90068: MinimumOSVersion too low`** — the app declares **13.0** and Apple
+  requires **15.0 or later from Spring 2027** to upload or submit. A warning, not an error: builds
+  14 and 15 carry it and were still accepted. Not a 1.0 problem; it becomes one next year.
 - ⚠️ **The ASC issuer ID is recorded nowhere.** Capture it next time you are in Codemagic.
 - ⚠️ **App Store Connect maintenance 2026-08-08, 6am PDT, up to two hours.** Do not plan a
   submission around that morning.
@@ -386,11 +441,12 @@ sarimanok and has run 13 builds; #13 succeeded and uploaded to App Store Connect
 is a Mac, so Codemagic remains the only route to an iOS build.** What is *not* resolved is
 **when it fires** — see the triggering warning in `▶ RESUME HERE`.
 
-**2. Never confirmed on real hardware.** Emulator only (`Medium_Phone_API_36.0`, `Pixel_10_Pro`)
-plus whatever TestFlight build #13 has been installed on — **and nobody has recorded installing
-it.** `kalyedex` was built, tested, tagged and store-ready without ever running on a device; do not
-repeat that. **Installing #13 from TestFlight on a real iPhone is the cheapest way to close this**,
-and it is worth doing before App Review rather than after.
+**2. ✅ MOSTLY RESOLVED — it has run on real hardware.** This entry said "never run on real
+hardware", which the TestFlight numbers disprove: builds 6–15 carry **installs and sessions**
+(build 13 alone: 4 installs, 13 sessions). `kalyedex` was built, tested, tagged and store-ready
+without ever running on a device — that trap was avoided here. What is still missing is a **written
+account of what those sessions found**; installs are not a playtest, and the five-tester run in
+`press/playtest-brief.md` is still the thing that closes it.
 
 **3. No validated difficulty metric — and the failure is instructive.**
 A claim was made that hand-authored level 1 (Tee) was *under-constrained*. It was inferred from

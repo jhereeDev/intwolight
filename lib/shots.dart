@@ -8,6 +8,7 @@ import 'map_screen.dart';
 import 'menagerie.dart';
 import 'progress.dart';
 import 'store.dart';
+import 'unlock_screen.dart';
 import 'workshop.dart';
 import 'workshop_screen.dart';
 
@@ -35,7 +36,8 @@ class Shot {
       this.pose,
       this.map = false,
       this.menagerie = false,
-      this.workshop = false});
+      this.workshop = false,
+      this.unlock = false});
   final String label;
   final int? level;
 
@@ -44,6 +46,29 @@ class Shot {
   final bool map;
   final bool menagerie;
   final bool workshop;
+  final bool unlock;
+}
+
+/// The paywall, shown as a customer sees it.
+///
+/// A build with no RevenueCat keys has nothing to sell, so the real screen
+/// renders its button as "STORE UNAVAILABLE" — which is exactly the wrong
+/// picture for the App Store Connect **in-app purchase review screenshot**,
+/// whose whole job is to show the purchase actually on offer.
+///
+/// This overrides only the two getters the screen reads. It grants nothing:
+/// `Store.unlocked` is `entitled || !canBuy`, so forcing `canBuy` true makes
+/// the app *more* locked, not less, and `computeUnlocked` is untouched. The
+/// money path in `store.dart` is deliberately not modified for a screenshot.
+///
+///   flutter run --release --dart-define=SHOT=true --dart-define=SHOT_PRICE='$2.99'
+class _ShotStore extends Store {
+  @override
+  bool get canBuy => true;
+
+  @override
+  String get price =>
+      const String.fromEnvironment('SHOT_PRICE', defaultValue: '\$2.99');
 }
 
 const shots = <Shot>[
@@ -60,6 +85,10 @@ const shots = <Shot>[
   // The Workshop mid-build, so the piece bar and the depth dial are both
   // visible doing something.
   Shot('06-workshop', workshop: true),
+  // Not part of the store listing set — this one exists for the App Store
+  // Connect IAP review screenshot, which was previously taken by hand and had
+  // gone two days stale by the time anyone looked at it.
+  Shot('07-unlock', unlock: true),
 ];
 
 /// Plausible progress, so the map reads as a game in play rather than an empty
@@ -91,11 +120,14 @@ class _ShotRunnerState extends State<ShotRunner> {
   int _i = 0;
   late final Progress _campaign = _sampleCampaign();
   late final Progress _daily = _sampleDaily();
+  late final Store _shotStore = _ShotStore();
 
   @override
   Widget build(BuildContext context) {
     final shot = shots[_i % shots.length];
-    final Widget screen = shot.workshop
+    final Widget screen = shot.unlock
+        ? UnlockScreen(store: _shotStore)
+        : shot.workshop
         ? WorkshopScreen(
             puzzle: workshopPuzzles[1], suppressPanel: true)
         : shot.menagerie
