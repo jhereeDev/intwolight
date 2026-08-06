@@ -164,6 +164,72 @@ makes the app *more* locked, and `computeUnlocked` in `store.dart` is untouched.
 was not modified for a screenshot, and should not be.** Override the price with
 `--dart-define=SHOT_PRICE='$4.99'` when the real tier is decided.
 
+## 🤖 Google Play — the second store, started 2026-08-06
+
+**Google Play alone is a valid Shipaton entry** (App Store, Google Play or Samsung — any
+one). This track was started as the real second path, not just as the escape hatch.
+
+**App created:** `In Two Lights` · `com.jhere.intwolights` · **Game** · **Free** (same shape
+as iOS: free app, one paid unlock). Developer account **JhereDev**.
+
+### 🔴 Two blockers, in dependency order
+
+**1. There is no Android release keystore, and everything else waits on it.**
+`build.gradle.kts` shipped the Flutter template default — release signed with the **debug**
+key. `flutter run --release` works that way, which is why it survived; nothing fails until
+Play rejects the upload. Gradle now reads `android/key.properties` locally or `CM_*` in CI
+and **warns at configure time** when neither exists. Verified: a bundle built with no key
+carries a certificate reading `Android Debug`.
+Either reuse `C:\Users\jhere\Documents\reset-signing-backup.zip` (it holds
+`upload-keystore.jks` + `key.properties`; one upload key may sign several apps and Play
+App Signing re-signs anyway) or generate a fresh one:
+```bash
+keytool -genkey -v -keystore intwolights-upload.jks -keyalg RSA \
+  -keysize 2048 -validity 10000 -alias upload
+```
+Then `android/key.properties` (gitignored) locally, and the four secrets in Codemagic's
+`InTwoLights_Android` group. **No `android-v*` tag has ever been pushed**, so the
+`android-release` workflow has never run.
+
+**2. Closed testing gates production.** The console: *"To publish to everyone, you need to
+finish setting up your game, complete a closed test, and apply for production access."*
+For a new personal account that is normally **12 testers for 14 continuous days** — confirm
+the exact number on the Production access page. It needs a signed build first, so blocker 1
+is on its critical path, and 14 days is the long pole against **2026-09-30**.
+
+### App content declarations — 4 of 10 done
+
+✅ **Privacy policy** (the same live GitHub Pages URL) · ✅ **Ads** — none · ✅ **Sign in
+details**.
+
+> On Sign in details the answer is **Yes, part of the app is restricted** — the form lists
+> *"payments… one-time products… access tiers"* under Yes, and chapters II–XIII sit behind
+> the unlock. There are no credentials, so username/password are blank and the free text
+> explains that Chapter I and the daily room are fully playable unpurchased. **Revisit once
+> promo codes can be generated** (they need a published release) — handing the reviewer a
+> code is stronger than asking them to buy.
+
+⬜ **Content ratings** — IARC's own embedded form; browser automation cannot drive it, do it
+by hand. Answers for a wordless abstract puzzler: category Game → Puzzle; **No** to
+violence, sexuality, language, controlled substances and gambling; **No** user interaction
+(challenge-a-friend shares a link, there is no in-app chat or UGC); no location; **Yes**
+digital purchases; no ads.
+⬜ **Target audience and content** · ⬜ **Data safety** — mirror the published iOS answers:
+Purchase History and User ID, app functionality only, not linked to identity · ⬜
+**Advertising ID** · ⬜ **Government apps** · ⬜ two more below the fold.
+
+### Play-only store assets
+
+`python press/make_play_assets.py` → `press/play/feature-graphic-1024x500.png` (**required
+by Play, no iOS equivalent**) and `icon-512.png`, downscaled from `icon-1024.png` rather
+than redrawn so the two stores cannot drift. Phone screenshots: the existing
+`press/store65` set is fine.
+
+> ⚠️ **`glow()` is additive on purpose.** The first version used `Image.blend` per lamp, so
+> the second call blended the already-warm image and kept ~6% of the first — the warm pool
+> was erased by *compositing*, not by being too dim, and three rounds of brightening did
+> nothing. Two lamps in a room add.
+
 ## Open questions and warnings
 
 - ⚠️ **Codemagic triggering is unresolved. Do not rely on it under deadline pressure.**
