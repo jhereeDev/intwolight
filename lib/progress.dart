@@ -16,9 +16,27 @@ import 'forms.dart';
 ///   II  THE JOINT   16 = Hinge + 15 one-joint generated
 ///   III TWO JOINTS   9 = the remaining generated, one and two joints mixed
 ///   IV  FORMS        3   V SILHOUETTES 4     → 47 rooms
-const chapterStarts = [0, 15, 31, 40, 43];
+///
+/// CHAPTERS VI–XIII are `levels_ext.g.dart` — 8 × 25 mixed-shape rooms cut
+/// from rods, wedges, bulbs, hexes and the three concave shapes. **Each is
+/// named for the pool it is actually generated from** (see
+/// `tool/gen_levels_ext.dart`), and joint count runs 0 → 1 → 2 across the
+/// eight, replaying I–III's progression over a vocabulary that is new. → 247.
+///
+/// ⚠️ These are APPENDED. Every index at or below 46 is unchanged, which is
+/// why `campaignKey` stays at `best_v4` and nobody loses a star. Inserting a
+/// chapter anywhere but the end would move every star after the splice onto a
+/// different puzzle — bump the key if that ever happens.
+const chapterStarts = [
+  0, 15, 31, 40, 43, //
+  47, 72, 97, 122, 147, 172, 197, 222,
+];
 
-const chapterNames = ['ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS', 'SILHOUETTES'];
+const chapterNames = [
+  'ROTATION', 'THE JOINT', 'TWO JOINTS', 'FORMS', 'SILHOUETTES', //
+  'THE ROD', 'THE WEDGE', 'THE BULB', 'THE ANGLE', 'THE ARROW', //
+  'ASSEMBLY', 'TANGLE', 'THE WORKS',
+];
 
 int chapterOf(int levelIndex) {
   for (var c = chapterStarts.length - 1; c >= 0; c--) {

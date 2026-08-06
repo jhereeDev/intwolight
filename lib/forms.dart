@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'geom.dart';
 import 'level.dart';
 import 'levels.g.dart';
+import 'levels_ext.g.dart';
 import 'mesh.dart';
 
 /// CHAPTER IV — hand-authored organic sculptures.
@@ -151,6 +152,15 @@ final allLevels = <Level>[
 
   ...formLevels,
   ...silhouetteLevels,
+
+  // CHAPTERS VI–XIII — the mixed-shape rooms, cut from rods, wedges, bulbs,
+  // hexes and the three concave shapes rather than boxes alone.
+  //
+  // ⚠️ Appended, never inserted. Everything above keeps the index it has had
+  // since `best_v4`, so no save is invalidated and `campaignKey` does not move.
+  // Adding these anywhere but the end would shift every star after the splice
+  // onto a different puzzle.
+  ...extendedLevels,
 ];
 
 // ---------------------------------------------------------------------------

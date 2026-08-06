@@ -18,9 +18,9 @@ Verified on the `Jhere` PC, 2026-08-06 — every number below was measured, not 
 | Repo | `25d76c7` on `main`. PC and laptop both in sync with `origin`, nothing uncommitted |
 | Toolchain | Flutter **3.44.8** · Dart **3.12.2** · stable |
 | `flutter analyze` | ✅ **No issues found** |
-| `flutter test` | ✅ **94 passing** |
-| Campaign | **47 levels across 5 chapters** (`chapterStarts = [0, 15, 31, 40, 43]` in `progress.dart`), plus a daily room and endless mode |
-| Free / paid split | CHAPTER I = **15 levels free**, chapters II–V (**32 levels**) behind the one-time RevenueCat unlock |
+| `flutter test` | ✅ **107 passing** |
+| Campaign | **247 levels across 13 chapters** (`chapterStarts` in `progress.dart`), plus a daily room and endless mode |
+| Free / paid split | CHAPTER I = **15 levels free**, chapters II–XIII (**232 levels**) behind the one-time RevenueCat unlock |
 | iOS | ✅ **Signing solved 2026-08-04.** **15 builds uploaded**, the newest two on Aug 5. All read *Ready to Submit*; the version currently has **#13** attached |
 | Privacy policy | ✅ **live** — `https://jhereedev.github.io/intwolight/privacy.html` returns **200** (re-checked 2026-08-06) |
 
@@ -54,7 +54,18 @@ in `lib/store.dart`.
 1. **The IAP has no review screenshot.** `Review Information → Screenshot` is empty and it is
    required. Apple also states *"your first non-consumable in-app purchase must be submitted with
    a new app version"* — so this one empty field gates the entire 1.0 submission.
-   **Capture it with `Shot('07-unlock')` in the harness** (see below), never by hand.
+   **The file is ready at `press/unlock-screen.png`**, captured through `Shot('07-unlock')`;
+   it only needs uploading. Never re-shoot it by hand.
+
+   > 🔴 **Two pieces of store copy went stale when the campaign grew to 247.** The paywall
+   > derives its own headline (`allLevels.length - chapterEnd(0)`) and now reads **"232 more
+   > rooms"**, but App Store Connect still says:
+   > * **IAP description** — *"Chapters II–V: 32 more rooms, one payment."* → it is chapters
+   >   **II–XIII** and **232** rooms.
+   > * **App Store description** — says **47 rooms** → 247.
+   >
+   > Understating what is sold is not a rejection risk, but the chapter range is now simply
+   > wrong. Both are Jhere's to edit.
 2. **App Privacy is filled in but NOT published.** Every declaration is entered — Purchase History
    and User ID, both *used for app functionality*, neither linked to identity — and the page still
    shows a live **Publish** button. Nothing has been submitted to Apple.
@@ -301,11 +312,13 @@ Full reasoning, including the six candidates that were killed to get here, is in
 |---|---|
 | **M0 kill gate** | ✅ **PASSED 2026-08-03**, seven days early. Jhere solved the hinge level and reported *deduction*, not fiddling |
 | Projection + scoring | ✅ dual-wall shadows, **arbitrary triangle meshes**, raster IoU |
-| Level generator | ✅ `tool/gen_levels.dart`, deterministic, rejection-sampled |
-| Campaign | ✅ **47 levels across 5 chapters** — `chapterStarts = [0, 15, 31, 40, 43]`: ROTATION 15, THE JOINT 16, TWO JOINTS 9, FORMS 3, SILHOUETTES 4 |
+| Level generator | ✅ `tool/gen_levels.dart` (boxes) and `tool/gen_levels_ext.dart` (mixed shapes), both deterministic and rejection-sampled |
+| Shape vocabulary | ✅ box · rod · bulb · wedge · hex · **ell, tee, chevron (concave)**. A box's shadow *is* its convex hull, so the concave three are the only pieces doing something a box cannot — `shapes_test.dart` proves it by rasterising each shadow against its own hull |
+| Campaign | ✅ **247 levels across 13 chapters**. I–V as below (47); **VI–XIII are 8 × 25 mixed-shape rooms** — THE ROD, THE WEDGE, THE BULB, THE ANGLE, THE ARROW, ASSEMBLY, TANGLE, THE WORKS — joints running 0 → 1 → 2 again over the new vocabulary |
+| Chapters I–V | ROTATION 15, THE JOINT 16, TWO JOINTS 9, FORMS 3, SILHOUETTES 4 |
 | Daily room | ✅ **180 baked rooms**, TODAY chip on the map, free and outside the chapter gate. Baked, not generated at runtime — "same room for everyone" only holds if the level is bit-identical, and `dart:math` Random makes no cross-platform promise. Date maths in **UTC** |
 | Endless mode | ✅ `lib/endless_screen.dart`, generated **on device** via `compute()`. The isolate is not optional — a hinged room costs ~1s on desktop and several times that on a phone. Room N+1 prefetches while N is played |
-| Tests | ✅ **94 passing** |
+| Tests | ✅ **107 passing** |
 | `flutter analyze` | ✅ **No issues found** |
 | Verified running | ✅ `Medium_Phone_API_36.0` (PC) and `Pixel_10_Pro` (laptop), release builds. ⚠️ **Real hardware still unconfirmed** — see Known debt |
 | Design pass | ✅ the corner is a real room: two walls, floor, two light pools, shadows dark on lit walls, dust, eased solve glow + haptics |
@@ -477,7 +490,11 @@ lib/geom.dart          V3/V2, rotation, wall projection, convex hull, raster mas
 lib/mesh.dart          arbitrary triangle meshes — replaced the box-only model
 lib/level.dart         Box/Pose/Level, world transform, shadows, LevelRuntime, tutorial trio
 lib/forms.dart         allLevels — THE campaign order. Organic forms + designed silhouettes
-lib/levels.g.dart      GENERATED — 36 procedural levels, consumed by forms.dart
+lib/levels.g.dart      GENERATED — 36 procedural box levels, consumed by forms.dart
+lib/levels_ext.g.dart  GENERATED — 200 mixed-shape levels, chapters VI–XIII.
+                       Pieces are emitted as `piece(Shape.rod, …)` RECIPES, not
+                       baked vertices: one lathe is ~90 points, so baking would
+                       make this a megabyte nobody can read or diff.
 lib/generator.dart     candidate sculptures, sampled metrics, rejection sampling
 lib/progress.dart      chapterStarts/chapterNames, stars, locking, the three ledgers
 lib/main.dart          app entry and the play screen
@@ -493,11 +510,30 @@ lib/challenge.dart     challenge a friend without handing them the answer
 lib/audio.dart         proximity drone + solve chord
 lib/shots.dart         --dart-define=SHOT=true capture harness for the press kit
 tool/gen_levels.dart   run by hand to regenerate levels.g.dart
+tool/gen_levels_ext.dart  the mixed-shape chapters (~5 min). Prints the
+                       chapterStarts/chapterNames lines to paste into
+                       progress.dart, so the table is never hand-counted.
 tool/gen_audio.py      synthesises the audio — the numbers in it ARE the sound design
 tool/silcheck.dart     verifies a silhouette reads on wall B and is not pre-solved
 tool/probe.dart        scratch experiment: hill-climb difficulty. Negative result, kept
-test/                  16 files, 94 tests
+test/                  17 files, 107 tests
 ```
+
+### Two invariants that adding levels must not break
+
+**1. `allLevels` order IS the save format — append, never insert.** `Progress` keys
+stars by index, so splicing a chapter into the middle moves every star after it onto a
+different puzzle. Chapters VI–XIII went on the end, every index ≤ 46 is untouched, and
+`campaignKey` therefore stays `best_v4` and nobody loses progress. If a level ever *has*
+to be inserted, bump the key and accept that everyone's campaign resets.
+
+**2. `generator.dart` is shared with endless, which generates on the device.** Its ledger
+is keyed by **depth**, on the promise that room 340 is the same puzzle forever. So mixed
+generation is opt-in — `generateChapter(mixed: false)` by default, and `_mixedCandidate`
+is a separate function rather than a flag inside `_candidate`, because the two draw
+different numbers of values from the RNG and a changed draw order would silently renumber
+every endless room. `shapes_test.dart` pins the default to box-only. **Endless must never
+pass `mixed: true`.**
 
 **The money path is a pure function on purpose.** `Store.computeUnlocked` is
 `forceLock ? false : (entitled || !canBuy)`. It was `entitled || !configured`, which failed open

@@ -82,6 +82,32 @@ class Ambience {
     Ambience(Color(0xFF1A1512), Color(0xFFFFC178), Color(0xFF89B7C4)),
     // V SILHOUETTES — theatrical, nearly a stage.
     Ambience(Color(0xFF10141A), Color(0xFFF0E4FF), Color(0xFF8FD4FF)),
+
+    // ── The mixed-shape chapters. ─────────────────────────────────────────
+    // These run 0 → 1 → 2 joints again over a new vocabulary, so the palette
+    // restarts warm and cools across the eight the way I–III do across three.
+    // Every pair keeps the warm/cool split: the two walls are two constraints,
+    // and collapsing the lamps to one colour would hide that.
+
+    // VI THE ROD — brass. Round pieces catch a light that has some metal in it.
+    Ambience(Color(0xFF171310), Color(0xFFFFCF8A), Color(0xFF93BEDC)),
+    // VII THE WEDGE — hard light for hard edges, the highest contrast so far.
+    Ambience(Color(0xFF0E1014), Color(0xFFFFE0B0), Color(0xFF7FB6F0)),
+    // VIII THE BULB — the warmest room in the game. Lathed shapes have no edge
+    // to read, so the light does the describing instead.
+    Ambience(Color(0xFF1B1410), Color(0xFFFFB877), Color(0xFF8FC6C9)),
+    // IX THE ANGLE — flat and even, so a notch is read by shape not by shading.
+    Ambience(Color(0xFF141519), Color(0xFFEFD9B8), Color(0xFFA8C4E6)),
+    // X THE ARROW — directional, a low raking light that agrees with the shape.
+    Ambience(Color(0xFF15110F), Color(0xFFFFC58A), Color(0xFF86ADD8)),
+    // XI ASSEMBLY — cooling off as the joints come back. Cf. III.
+    Ambience(Color(0xFF10141C), Color(0xFFE3D0BA), Color(0xFF9FC0FF)),
+    // XII TANGLE — colder still, and dimmer: the busiest silhouettes in the
+    // game need the room to stop competing with them.
+    Ambience(Color(0xFF0D1119), Color(0xFFD8C8B6), Color(0xFF97B8FA)),
+    // XIII THE WORKS — the last room. Both lamps at full, the widest split in
+    // the game, because everything the vocabulary knows shows up here at once.
+    Ambience(Color(0xFF0F0F16), Color(0xFFFFE3B4), Color(0xFF8ECBFF)),
   ];
 
   /// Rooms with no chapter — the daily, endless, the Workshop — use the

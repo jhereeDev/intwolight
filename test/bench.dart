@@ -49,4 +49,22 @@ void main() {
           'now ${(score + paths).toStringAsFixed(1)}ms/frame');
     }
   });
+
+  // The campaign went from 47 rooms to 247, and `extendedLevels` is a top-level
+  // `final` — so the first thing that touches `allLevels` pays for building
+  // every mixed-shape piece at once (lathes get revolved, prisms get ear
+  // clipped). That cost lands on whoever opens the map first. If this ever
+  // reaches a visible fraction of a second, the fix is a lazily-built mesh on
+  // Box rather than trimming the level count.
+  test('cold cost of building the campaign', () {
+    final sw = Stopwatch()..start();
+    final n = allLevels.length;
+    final pieces = allLevels.fold(0, (a, lv) => a + lv.boxes.length);
+    // Force every mesh, which is what the map does when it draws them.
+    final tris = allLevels.fold(
+        0, (a, lv) => a + lv.boxes.fold(0, (b, p) => b + p.mesh.triCount));
+    sw.stop();
+    print('campaign: $n levels, $pieces pieces, $tris tris '
+        '— built in ${sw.elapsedMilliseconds}ms');
+  });
 }
