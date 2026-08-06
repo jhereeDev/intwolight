@@ -31,11 +31,19 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # status bar (clock, wifi, battery) and the bottom its gesture pill. Shipping
 # those in an iOS App Store listing advertises the wrong platform on every
 # screenshot. Cropped away before fitting; the game draws nothing there.
-CROP_TOP, CROP_BOTTOM = 130, 110
+#
+# ⚠️ PROPORTIONAL, not absolute. These were 130 and 110 pixels, measured on the
+# 1280x2856 emulator this file was written against. `Medium_Phone_API_36.0`
+# captures at 1080x2400, where a fixed 130px eats 5.4% of the frame instead of
+# 4.6% — enough to clip the close button off the top of the unlock screen. The
+# chrome is a fraction of the display, so the crop has to be one too.
+CROP_TOP_FRAC, CROP_BOTTOM_FRAC = 130 / 2856, 110 / 2856
 
 
 def strip_chrome(im):
-    return im.crop((0, CROP_TOP, im.width, im.height - CROP_BOTTOM))
+    top = round(im.height * CROP_TOP_FRAC)
+    bottom = round(im.height * CROP_BOTTOM_FRAC)
+    return im.crop((0, top, im.width, im.height - bottom))
 
 
 def fit(im, size):

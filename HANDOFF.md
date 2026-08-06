@@ -54,23 +54,31 @@ in `lib/store.dart`.
 1. **The IAP has no review screenshot.** `Review Information → Screenshot` is empty and it is
    required. Apple also states *"your first non-consumable in-app purchase must be submitted with
    a new app version"* — so this one empty field gates the entire 1.0 submission.
-   **The file is ready at `press/unlock-screen.png`**, captured through `Shot('07-unlock')`;
-   it only needs uploading. Never re-shoot it by hand.
+   **The file is ready at `press/store/07-unlock.png`** (1320×2868), captured through
+   `Shot('07-unlock')` and sized by `make_shots.py`. It only needs uploading.
 
-   > ⚠️ **The IAP page has TWO image fields and they are not interchangeable.** Uploading
-   > the screenshot into the promotional slot fails with *"The dimensions of one or more
-   > screenshots are wrong"*, which reads like a problem with the screenshot and is not.
+   > ⚠️ **The IAP page has TWO image fields, and NEITHER takes a raw capture.** Both reject
+   > with the same message — *"The dimensions of one or more screenshots are wrong"* — which
+   > names the wrong thing and cost two attempts to pin down.
    >
    > | Field | File | Rule |
    > |---|---|---|
-   > | **Review Information → Screenshot** | `press/unlock-screen.png` (1080×2199) | **Required.** Gates submission. Shows the reviewer the purchase on offer |
+   > | **Review Information → Screenshot** | `press/store/07-unlock.png` (1320×2868) | **Required**, gates submission. Must match **one of the App Store screenshot specs the app supports** — *not* any arbitrary size |
    > | **Image (Optional)** | `press/iap-promo-1024.png` | **Strictly 1024×1024**, 72 dpi, RGB, flattened, no rounded corners, no alpha |
    >
-   > A phone capture can never satisfy the second — it is portrait, and cropping it square
-   > loses either the headline or the art. `press/make_promo.py` builds the square one.
-   > It is worth having even though Apple calls it optional: **Shipaton requires promo codes
-   > so judges can unlock the paid content**, and this image is what a judge sees at
-   > redemption.
+   > **The review screenshot is a screenshot in Apple's strict sense.** Apple's wording:
+   > *"Upload a screenshot that meets any of the screenshot specifications your app
+   > supports."* A 1080×2199 phone capture matches none of them and is rejected — so a raw
+   > `adb` grab is never uploadable, it has to go through `make_shots.py` first. Valid
+   > portrait iPhone sizes include **1320×2868** (6.9"), **1284×2778** and **1242×2688**
+   > (6.5"), **1179×2556** (6.3"). Source:
+   > <https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications>
+   >
+   > A phone capture can never satisfy the *promotional* field either — it is portrait, and
+   > cropping it square loses either the headline or the art, so that one is built rather
+   > than cropped by `press/make_promo.py`. Worth having even though Apple calls it
+   > optional: **Shipaton requires promo codes so judges can unlock the paid content**, and
+   > this image is what a judge sees at redemption.
 
    > 🔴 **Two pieces of store copy went stale when the campaign grew to 247.** The paywall
    > derives its own headline (`allLevels.length - chapterEnd(0)`) and now reads **"232 more
@@ -138,9 +146,15 @@ Everything still outstanding is in the numbered list above.
 export PATH="/d/flutter/bin:$PATH"                      # Jhere PC
 flutter emulators --launch Medium_Phone_API_36.0
 flutter run -d emulator-5554 --release --dart-define=SHOT=true
-# tap through to shot 07-unlock, then:
-adb exec-out screencap -p > press/unlock-screen.png
+# tap through to the shot you want (07-unlock is the 7th), then:
+adb exec-out screencap -p > press/raw/07-unlock.png
+python press/make_shots.py "press/raw/*.png"      # REQUIRED — see below
 ```
+
+**The `make_shots.py` step is not optional.** A raw capture is 1080×2400, which matches no
+App Store screenshot spec, so it is rejected by every upload field in App Store Connect.
+The tool strips the Android chrome and fits each capture to `press/store` (1320×2868),
+`press/store65` (1242×2688) and `press/devpost` (1179×2556).
 
 `Shot('07-unlock')` renders the real `UnlockScreen` against `_ShotStore`, a two-getter subclass
 that lives in `lib/shots.dart`. **It exists because a keyless build has nothing to sell**, so the

@@ -6,10 +6,14 @@ This is NOT the review screenshot. App Store Connect's in-app purchase page has
 two image fields with different rules, and putting the right file in the wrong
 one is rejected on dimensions:
 
-  Review Information -> Screenshot   press/unlock-screen.png (1080x2199)
+  Review Information -> Screenshot   press/store/07-unlock.png (1320x2868)
                                      The REQUIRED one. Shows the reviewer the
-                                     purchase actually on offer. Captured from
-                                     the app by Shot('07-unlock').
+                                     purchase actually on offer. Captured by
+                                     Shot('07-unlock') and sized by
+                                     make_shots.py -- Apple requires it to match
+                                     one of the App Store screenshot specs the
+                                     app supports, so a raw 1080x2400 grab is
+                                     rejected exactly like a wrong-size promo.
 
   Image (Optional)                   this file. STRICTLY 1024x1024, 72 dpi,
                                      RGB, flattened, no rounded corners, no
