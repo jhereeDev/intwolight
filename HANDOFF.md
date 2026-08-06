@@ -57,6 +57,21 @@ in `lib/store.dart`.
    **The file is ready at `press/unlock-screen.png`**, captured through `Shot('07-unlock')`;
    it only needs uploading. Never re-shoot it by hand.
 
+   > ⚠️ **The IAP page has TWO image fields and they are not interchangeable.** Uploading
+   > the screenshot into the promotional slot fails with *"The dimensions of one or more
+   > screenshots are wrong"*, which reads like a problem with the screenshot and is not.
+   >
+   > | Field | File | Rule |
+   > |---|---|---|
+   > | **Review Information → Screenshot** | `press/unlock-screen.png` (1080×2199) | **Required.** Gates submission. Shows the reviewer the purchase on offer |
+   > | **Image (Optional)** | `press/iap-promo-1024.png` | **Strictly 1024×1024**, 72 dpi, RGB, flattened, no rounded corners, no alpha |
+   >
+   > A phone capture can never satisfy the second — it is portrait, and cropping it square
+   > loses either the headline or the art. `press/make_promo.py` builds the square one.
+   > It is worth having even though Apple calls it optional: **Shipaton requires promo codes
+   > so judges can unlock the paid content**, and this image is what a judge sees at
+   > redemption.
+
    > 🔴 **Two pieces of store copy went stale when the campaign grew to 247.** The paywall
    > derives its own headline (`allLevels.length - chapterEnd(0)`) and now reads **"232 more
    > rooms"**, but App Store Connect still says:
@@ -509,6 +524,8 @@ lib/workshop*.dart     the game read backwards
 lib/challenge.dart     challenge a friend without handing them the answer
 lib/audio.dart         proximity drone + solve chord
 lib/shots.dart         --dart-define=SHOT=true capture harness for the press kit
+press/make_promo.py    the 1024x1024 IAP promotional image (NOT the review
+                       screenshot — see the two-field warning above)
 tool/gen_levels.dart   run by hand to regenerate levels.g.dart
 tool/gen_levels_ext.dart  the mixed-shape chapters (~5 min). Prints the
                        chapterStarts/chapterNames lines to paste into
