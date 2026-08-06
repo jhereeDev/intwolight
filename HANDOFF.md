@@ -1,72 +1,116 @@
 # IN TWO LIGHTS — Handoff
 
-# ▶ RESUME HERE — written 2026-08-04 on the `Jhere` PC, for the LAPTOP
+# ▶ RESUME HERE — rewritten 2026-08-06 on the `Jhere` PC
 
-**One thing blocks TestFlight, and it may be sitting on the laptop you are reading this on.**
+> **This section previously said the iOS signing key was the one blocker and asked the laptop to
+> go hunting for it. That was discharged on 2026-08-04 and the text sat here stale for two days.**
+> The signing story is kept below, compressed, because it cost a day. It is history, not a task.
 
-Everything else is done: the app, the Apple account, the App Store Connect record, Codemagic, the
-icon, the store screenshots and the privacy policy. Two iOS builds have run. Both reached
-`Fetch or create signing files` and died there. **Nothing else has ever failed** — dependencies,
-`flutter analyze` and all 25 tests pass on the Mac every run.
+**The build is done and on TestFlight. Nothing in the code blocks the release.**
+**What blocks it is paperwork only Jhere can enter.**
 
-## 🔴 FIRST ACTION ON THIS LAPTOP: look for the iOS signing private key
+## Where things actually stand
 
-Search for a PEM block beginning `-----BEGIN RSA PRIVATE KEY-----` or `-----BEGIN PRIVATE KEY-----`.
-Likely spots: `Documents`, `Downloads`, `.ssh`, wherever sarimanok was first set up, or a password
-manager.
+Verified on the `Jhere` PC, 2026-08-06 — every number below was measured, not copied forward:
 
-```powershell
-Get-ChildItem -Path $HOME -Recurse -Include *.pem,*.key -ErrorAction SilentlyContinue |
-  Select-String -Pattern "BEGIN.*PRIVATE KEY" -List | Select-Object Path
-```
+| | |
+|---|---|
+| Repo | `25d76c7` on `main`. PC and laptop both in sync with `origin`, nothing uncommitted |
+| Toolchain | Flutter **3.44.8** · Dart **3.12.2** · stable |
+| `flutter analyze` | ✅ **No issues found** |
+| `flutter test` | ✅ **94 passing** |
+| Campaign | **47 levels across 5 chapters** (`chapterStarts = [0, 15, 31, 40, 43]` in `progress.dart`), plus a daily room and endless mode |
+| Free / paid split | CHAPTER I = **15 levels free**, chapters II–V (**32 levels**) behind the one-time RevenueCat unlock |
+| iOS | ✅ **Signing solved 2026-08-04.** Build **#13** succeeded (6m 2s) and uploaded to App Store Connect |
+| Privacy policy | ✅ **live** — `https://jhereedev.github.io/intwolight/privacy.html` returns **200** (re-checked 2026-08-06) |
 
-**Why this laptop:** sarimanok's Codemagic variable `CERTIFICATE_PRIVATE_KEY` (value hash
-`777022fb`) matches Apple Distribution certificate **`6LC4NXABB5`**, and Codemagic will not show a
-secret back. If a readable copy of that key exists anywhere, it is most likely here — this is
-where sarimanok was first signed. It is not on the PC; that was searched.
+## 🔴 THE ONLY BLOCKER: two Apple forms and a bank account
 
-**If you find it:** Codemagic → app `intwolight` → Environment variables → set
-`CERTIFICATE_PRIVATE_KEY`, group `intwolights_ios`, Secret ✅ (replace the current value). Then run
-the `In Two Lights → TestFlight` workflow. Signing will find the existing certificate, skip
-creation entirely, and nothing else in the account is touched.
+Paid Applications is **Pending User Info**. Until it goes Active no product exists, so the
+RevenueCat paywall has nothing to sell — a tester reaching it gets a button that does nothing.
+Five minutes of Jhere's time, unlocking a multi-day Apple process. **There are TWO forms**, both
+tagged "Paid Apps", and completing one does not clear the banner:
 
-## The problem in one table
+1. **U.S. Form W-8BEN** — Part I is filled. Remaining: Line 5 (U.S. TIN) **blank**; Line 9
+   **checked** (resident of the Philippines); Line 10 Article **`8(1)`**, rate **`0`**,
+   ☑️ *Income from the sale of applications*.
+2. **U.S. Certificate of Foreign Status** — Apple's own form, no treaty section. Tick the
+   declaration (no U.S. employees, no U.S. equipment — all true), **Title = `Owner`**.
 
-Apple caps Apple Distribution certificates at 3. There are 3, and **each is in active use by a
-different app** — read from each app's own build log, not assumed:
+> ⚠️ **Article 8, not Article 7.** The Apple-forum advice says "Article 7 paragraph 1", copied from
+> OECD-model treaties. The **US–Philippines treaty is a 1976 agreement with its own numbering**
+> (<https://www.irs.gov/pub/irs-trty/philip.pdf>): Article 7 is *Income from Real Property*,
+> Article 8 is Business Profits, Article 13 is Royalties. Citing Article 7 claims a treaty benefit
+> for rental income on land. Fallback if 8(1) is challenged: `13(2)(a)` at `15`%. Both beat the 30%
+> statutory default that applies if Line 10 is left empty. A wrong entry costs a resubmission,
+> not the account.
 
-| App | key hash | Certificate | Store status |
-|---|---|---|---|
-| sarimanok | `777022fb` | `6LC4NXABB5` (exp 2027-07-31) | Waiting for Review |
-| kalyedex | `f03e2806` | 07-23 or 07-28 | Prepare for Submission |
-| reset | `7f46295e` | the other | Waiting for Review |
-| **In Two Lights** | fresh key (below) | **none — needs a 4th** | never built |
+## Then, in order
 
-**Root cause is a habit, not a bug: one Apple Distribution certificate can sign ALL your apps.**
-Each Codemagic app generated its own key, so each minted its own certificate, and the cap was hit
-at the fourth app. Generating yet another fresh key for In Two Lights repeated the mistake instead
-of fixing it.
+1. **Submit 1.0 for App Review.** Review time is the schedule risk and the first public release
+   must land inside **2026-07-31 → 09-30**. Ship early, update after.
+2. **Submit for external TestFlight beta review** (~1–2 days) so strangers can be recruited.
+   Internal testers are instant but must be added as App Store Connect *users* — not something
+   to hand a stranger.
+3. **Run the five-tester playtest** — `press/playtest-brief.md`. Longest lead time of anything
+   left, because it depends on other people's evenings. Still the only thing that can validate the
+   difficulty ordering, and **the three knobs below are all guesses until it runs**.
+4. **Demo video, under 2 min** + the store URL — both still open on Devpost entry
+   `1123433-in-two-lights`.
 
-## ⚠️ Machine-specific: the fresh key exists on the PC ONLY
+### Knobs that need a real player, not a terminal
+`_settleDelay` 900ms · `_hintDelay` 60s · the drone's floor/duck/curve in `tool/gen_audio.py`.
 
-`C:\Users\jhere\Documents\intwolights-CERTIFICATE_PRIVATE_KEY.pem` — **on the `Jhere` PC, not on
-this laptop.** It is also stored inside Codemagic as `intwolight`'s `CERTIFICATE_PRIVATE_KEY`, but
-Codemagic never reveals a secret, so **that PC file is the only readable copy that exists.**
-If the fallback below is used, copy it across first. If that file is lost, the fallback gets worse.
+## Still gating "Add for Review" on the App Store listing
 
-## Fallback, if sarimanok's key cannot be found
+Build #13 is attached, six screenshots at 1242×2688 are in, the description reads 47 rooms, and
+`Sign-in required` is correctly unchecked. **Not done:** App Review contact details (personal data
+— Jhere enters these), App Privacy, Age Rating, Pricing and Availability, and the IAP itself,
+which is blocked by Paid Applications above.
 
-Consolidate onto one certificate, touching only the app that is NOT in review:
+> ⚠️ **Release option currently reads "Manually release this version"** — set by a misdirected
+> click, not a decision. Defensible (it puts go-live under Jhere's control against a 09-30 window)
+> but it was not intentional. Confirm before submitting.
 
-1. Revoke **kalyedex's** certificate. It is *Prepare for Submission* — not in review, not live.
-   Leave sarimanok's and reset's alone; both are Waiting for Review.
-2. Run the In Two Lights build. It mints one certificate bound to the fresh key.
-3. Put that same fresh key on kalyedex so it shares the new certificate.
+## Open questions and warnings
 
-Result: 3 certificates, 4 apps, nothing in review disturbed. Later, when sarimanok and reset clear
-review, migrate them onto the same key and drop to one certificate with two spare slots.
+- ⚠️ **Codemagic triggering is unresolved. Do not rely on it under deadline pressure.**
+  `codemagic.yaml` declares `triggering: events: [tag]` — `ios-v*` for the iOS workflow,
+  `android-v*` for `android-release`. **Config says tags only**, yet builds have been observed
+  attributed to `main`, and pushing tag `ios-v0.2` did not fire promptly either; #12 was started
+  manually, cancelled by neither Jhere nor Claude, and #13 appeared for the same commit. The
+  likeliest reading is a late webhook plus auto-cancel of the duplicate. **When a build must
+  happen, start it from the dashboard and watch it.**
+- Queued ~10 min before getting a machine is **normal** — free-plan priority on the shared M2 pool,
+  not quota (**~48 / 500** macOS minutes used). **Do not cancel and retry a queued build**; it only
+  sends you to the back of the line.
+- ⚠️ **`ios-v0.1` is a stale tag** and `triggering: events: [tag]` makes it look deliberate.
+  Delete it or re-point it.
+- ⚠️ **`UIRequiresFullScreen` is deprecated** — slated to stop exempting apps on iPadOS 26+. Fine
+  for 1.0; after Shipaton it is real iPad landscape or `TARGETED_DEVICE_FAMILY = 1`.
+- ⚠️ **The ASC issuer ID is recorded nowhere.** Capture it next time you are in Codemagic.
+- ⚠️ **App Store Connect maintenance 2026-08-08, 6am PDT, up to two hours.** Do not plan a
+  submission around that morning.
+- ⚠️ On Devpost, *"Are you an employee of RevenueCat or a Shipaton Sponsor?"* is **checked**.
+  Nobody changed it because it is a factual claim about Jhere. That question normally decides
+  prize eligibility — **ask him**.
 
-Revoking is irreversible and touches a shipping app. Decide deliberately.
+## How the signing blocker was solved — history, not a task
+
+`sarimanok-cert-key` on the laptop (`C:\Users\FF MIRAVITE\sarimanok-cert-key`) was the right key.
+**The certificate cap was never the wall and nothing was revoked** — the `HANDOFF.md` fallback of
+revoking kalyedex's certificate was never needed. The file has no extension, which is why this
+document's own suggested search (`-Include *.pem,*.key`) could not have found it.
+`kalyedex_cert_key2.pem`, also on the laptop, remains the untried backup if a fresh certificate is
+ever required. Full inventory: AIOS `connections.md` §Signing key material.
+
+Three failures, none of them the obvious reading of its own error message:
+
+| Build | Error | Actual cause |
+|---|---|---|
+| #3 | `Cannot save Signing Certificates without certificate private key` | Built from tag `ios-v0.1`, where `codemagic.yaml` has the env group **commented out**. *An old tag pins an old pipeline, not just old source.* |
+| #4 | altool `90474` — iPad multitasking orientations | `UIRequiresFullScreen` missing. `sarimanok` carries it and warns about this in its own plist comment; the port dropped exactly that key. |
+| #4 again | identical `90474` | The fix was committed and **never pushed**, so CI rebuilt the same bundle. The push had failed: plain `git@github.com` **reads** on the laptop and cannot **write**. See AIOS `connections.md`. |
 
 ## Everything already wired (do not redo)
 
@@ -75,15 +119,28 @@ Revoking is irreversible and touches a shipping app. Decide deliberately.
 | Apple Team | `A23ZGW4Y37` |
 | App ID | `com.jhere.intwolights` (`HKF44N9DFA`) — registered |
 | App Store Connect | **In Two Lights**, Apple ID `6797556691`, SKU `intwolights-ios-001` |
-| Agreements | Free Apps **Active**. Paid Apps **Pending User Info** — needs bank account + U.S. tax form. **Not needed for TestFlight** |
+| Agreements | Free Apps **Active**. Paid Apps **Pending User Info** — see the blocker above. **Not needed for TestFlight** |
 | Codemagic | app `intwolight`, on `codemagic.yaml`, integration `asc-key` (`FGDYK5MTLK`) |
-| Devpost | entry `1123433-in-two-lights` — story, tags, 2 images, thumbnail done. Needs demo video + store URL |
-| Privacy policy | `docs/privacy.html` — **enable GitHub Pages** (Settings → Pages → main `/docs`) |
-| Store assets | `press/store/` 1320×2868 ×4 · `press/devpost/` 1179×2556 ×4 · `press/icon-1024.png` |
+| Devpost | entry `1123433-in-two-lights` — story, pitch, thumbnail, six captioned screenshots, tags, repo link all saved. Needs demo video + store URL |
+| Privacy policy | ✅ live at `https://jhereedev.github.io/intwolight/privacy.html` (Pages is enabled) |
+| Store assets | regenerate with `--dart-define=SHOT=true` (`lib/shots.dart`) — **never re-shoot by hand**, they went stale twice in one day. `press/raw` is replaced in place, never joined by a `raw2/` |
 | Android keystore | `C:\Users\jhere\Documents\reset-signing-backup.zip` (PC only) — for `android-release` later |
+| iOS signing key | `C:\Users\jhere\Documents\intwolights-CERTIFICATE_PRIVATE_KEY.pem` — **PC only, and the only readable copy**; Codemagic never reveals a secret back |
 
-⚠️ **Codemagic does not fire on tag pushes** — the `ios-v0.1` tag pushed and nothing happened.
-Builds have all been started manually from the UI. The `triggering:` block is currently decorative.
+## How to read the rest of this file
+
+Everything below was **reconciled against the working tree on 2026-08-06** — the sections that had
+gone stale (State of play, the code map, Known debt, "What comes next", the test counts) now carry
+measured numbers, and the historical corrections are marked as history rather than as tasks.
+
+Two rules for keeping it that way:
+
+1. **This section is the only place a next action belongs.** Everything below is context, decisions
+   and machine setup. When a task moves, it moves here.
+2. **Numbers in this file are claims with a date on them.** They went stale twice — "25 tests" when
+   there were 94, "no CI" after 13 builds. If a number matters, measure it (`flutter test`,
+   `git log`) rather than quoting the file. **Trust order: this section → the git log → the AIOS
+   `projects/in-two-lights/status.md` → everything else.**
 
 ---
 
@@ -97,7 +154,11 @@ Read this before touching anything. It is the fastest way back into context.
 
 ---
 
-## 🔴 Do this first, next session
+## Decisions from 2026-08-03 — kept because they still bind, not because they are pending
+
+> **This section used to be titled "🔴 Do this first, next session".** It is not the next session's
+> list any more — see `▶ RESUME HERE` at the top for that. What survives here is the *reasoning*,
+> which is still load-bearing, and one open human question.
 
 > ### ⚠️ The old #1 here was wrong. Corrected 2026-08-03 against the official rules.
 >
@@ -179,21 +240,28 @@ Full reasoning, including the six candidates that were killed to get here, is in
 
 ## State of play
 
+**Verified on the `Jhere` PC 2026-08-06 — this table was two builds out of date and is now measured.**
+
 | Area | State |
 |---|---|
 | **M0 kill gate** | ✅ **PASSED 2026-08-03**, seven days early. Jhere solved the hinge level and reported *deduction*, not fiddling |
 | Projection + scoring | ✅ dual-wall shadows, **arbitrary triangle meshes**, raster IoU |
 | Level generator | ✅ `tool/gen_levels.dart`, deterministic, rejection-sampled |
-| Levels | ✅ **41** across five chapters — 36 generated, 3 organic forms, 2 designed silhouettes |
-| Tests | ✅ **22 passing** |
-| `flutter analyze` | ✅ clean |
-| Verified running | ✅ `Medium_Phone_API_36.0`, release build |
+| Campaign | ✅ **47 levels across 5 chapters** — `chapterStarts = [0, 15, 31, 40, 43]`: ROTATION 15, THE JOINT 16, TWO JOINTS 9, FORMS 3, SILHOUETTES 4 |
+| Daily room | ✅ **180 baked rooms**, TODAY chip on the map, free and outside the chapter gate. Baked, not generated at runtime — "same room for everyone" only holds if the level is bit-identical, and `dart:math` Random makes no cross-platform promise. Date maths in **UTC** |
+| Endless mode | ✅ `lib/endless_screen.dart`, generated **on device** via `compute()`. The isolate is not optional — a hinged room costs ~1s on desktop and several times that on a phone. Room N+1 prefetches while N is played |
+| Tests | ✅ **94 passing** |
+| `flutter analyze` | ✅ **No issues found** |
+| Verified running | ✅ `Medium_Phone_API_36.0` (PC) and `Pixel_10_Pro` (laptop), release builds. ⚠️ **Real hardware still unconfirmed** — see Known debt |
 | Design pass | ✅ the corner is a real room: two walls, floor, two light pools, shadows dark on lit walls, dust, eased solve glow + haptics |
+| Audio | ✅ proximity drone whose gain tracks the **weaker** wall, plus a 620ms solve chord matched to the glow. Synthesised by `tool/gen_audio.py` — **the numbers in that file are the sound design** |
 | Onboarding | ✅ wordless — a drifting ghost touch point, gone on first drag. No modal, no Skip |
-| Progression / stars / map | ✅ level map of miniature rooms, chapters, stars on **precision** (0.92 / 0.955 / 0.985), `shared_preferences` |
-| **CI** | ✅ `codemagic.yaml` at the root, ported from sarimanok. **Untested — no build has run yet** |
-| **RevenueCat** | ❌ **not integrated** — M3, and the only thing between here and a shippable 1.0 |
-| Store assets | ❌ no icon, no screenshots, no privacy policy, no demo video |
+| Progression / stars / map | ✅ level map of miniature rooms, chapters, stars on **precision** (0.92 / 0.955 / 0.985), `shared_preferences`. **Three separate ledgers** — campaign (`best_v2`), daily, endless (`endless_v1`, keyed by depth so a campaign reorder never invalidates it) |
+| Hints | ✅ fade in after 60s stuck, withdraw on solve, no button to ask |
+| Extras | ✅ Menagerie (`lib/menagerie.dart`), Workshop (`lib/workshop_screen.dart`), challenge-a-friend (`lib/challenge.dart`), share that captures **the scene only**, undo, streak counting from *yesterday* |
+| **CI** | ✅ `codemagic.yaml` at the root. **13 builds run; #13 succeeded and uploaded to App Store Connect.** See the triggering warning at the top |
+| **RevenueCat** | ✅ **integrated** — `lib/store.dart`, `lib/unlock_screen.dart`, `Progress.chapterLocked()`. One non-consumable, entitlement `In Two Lights Pro`. **Cannot take money until Paid Applications goes Active** |
+| Store assets | ✅ icon, six screenshots at 1242×2688, privacy policy live. ❌ demo video still outstanding |
 
 ---
 
@@ -219,7 +287,7 @@ rename is complete and free. Current identifiers:
 | Apple Team ID | `A23ZGW4Y37` |
 | App Store Connect Apple ID | `6797556691` |
 | ASC SKU | `intwolights-ios-001` |
-| Privacy policy URL | `https://jhereedev.github.io/intwolight/privacy.html` (needs Pages enabled) |
+| Privacy policy URL | `https://jhereedev.github.io/intwolight/privacy.html` — ✅ live, returns 200 |
 
 **Registered 2026-08-03 in the real Apple account:** the App ID
 `com.jhere.intwolights` exists in Certificates/Identifiers, and the App Store Connect record
@@ -276,7 +344,7 @@ failure.
 ```bash
 flutter pub get
 flutter analyze     # expect: No issues found!
-flutter test        # expect: All tests passed! (10 tests)
+flutter test        # expect: All tests passed! (94 tests, ~8s)
 ```
 
 If those three pass, the checkout is good.
@@ -313,13 +381,16 @@ build_runner and there is no watch mode — run it by hand, commit the output.
 
 ## Known debt, carried deliberately
 
-**1. No CI.** `flame-minis` has a working `codemagic.yaml` shipping both stores; this repo has
-nothing. That is the price of the separate-repo decision, and it lands in M4.
-**If neither machine is a Mac, Codemagic is the only route to an iOS build** — port that config
-before M4, not during it.
+**1. ✅ RESOLVED — CI exists.** This entry used to read "No CI". `codemagic.yaml` was ported from
+sarimanok and has run 13 builds; #13 succeeded and uploaded to App Store Connect. **Neither machine
+is a Mac, so Codemagic remains the only route to an iOS build.** What is *not* resolved is
+**when it fires** — see the triggering warning in `▶ RESUME HERE`.
 
-**2. Never run on real hardware.** Emulator only, so far. `kalyedex` was built, tested, tagged
-and store-ready without ever running on a device; do not repeat that.
+**2. Never confirmed on real hardware.** Emulator only (`Medium_Phone_API_36.0`, `Pixel_10_Pro`)
+plus whatever TestFlight build #13 has been installed on — **and nobody has recorded installing
+it.** `kalyedex` was built, tested, tagged and store-ready without ever running on a device; do not
+repeat that. **Installing #13 from TestFlight on a real iPhone is the cheapest way to close this**,
+and it is worth doing before App Review rather than after.
 
 **3. No validated difficulty metric — and the failure is instructive.**
 A claim was made that hand-authored level 1 (Tee) was *under-constrained*. It was inferred from
@@ -346,15 +417,39 @@ never been checked against a human.
 ## Map of the code
 
 ```
-lib/geom.dart        V3/V2, rotation, wall projection, convex hull, raster mask, IoU
-lib/level.dart       Box/Pose/Level, world transform, shadows, LevelRuntime, tutorial trio
-lib/generator.dart   candidate sculptures, sampled metrics, rejection sampling
-lib/levels.g.dart    GENERATED — 36 curated levels
-lib/main.dart        the ugly M0 UI: drag-rotate, two wall panels, hinge slider
-tool/gen_levels.dart run by hand to regenerate levels.g.dart
-tool/probe.dart      scratch experiment: hill-climb difficulty. Negative result, kept
-test/geom_test.dart  10 tests
+lib/geom.dart          V3/V2, rotation, wall projection, convex hull, raster mask, IoU
+lib/mesh.dart          arbitrary triangle meshes — replaced the box-only model
+lib/level.dart         Box/Pose/Level, world transform, shadows, LevelRuntime, tutorial trio
+lib/forms.dart         allLevels — THE campaign order. Organic forms + designed silhouettes
+lib/levels.g.dart      GENERATED — 36 procedural levels, consumed by forms.dart
+lib/generator.dart     candidate sculptures, sampled metrics, rejection sampling
+lib/progress.dart      chapterStarts/chapterNames, stars, locking, the three ledgers
+lib/main.dart          app entry and the play screen
+lib/scene.dart         the corner rendered as one room: walls, floor, seam, light pools, dust
+lib/map_screen.dart    level map — each node a miniature of its own room
+lib/store.dart         RevenueCat wrapper + computeUnlocked (the money path, pure & testable)
+lib/unlock_screen.dart the paywall
+lib/daily.dart         + dailies.g.dart — 180 baked rooms, UTC date maths
+lib/endless.dart       + endless_screen.dart — on-device generation via compute(), prefetched
+lib/menagerie.dart     shelf of the figures you have found
+lib/workshop*.dart     the game read backwards
+lib/challenge.dart     challenge a friend without handing them the answer
+lib/audio.dart         proximity drone + solve chord
+lib/shots.dart         --dart-define=SHOT=true capture harness for the press kit
+tool/gen_levels.dart   run by hand to regenerate levels.g.dart
+tool/gen_audio.py      synthesises the audio — the numbers in it ARE the sound design
+tool/silcheck.dart     verifies a silhouette reads on wall B and is not pre-solved
+tool/probe.dart        scratch experiment: hill-climb difficulty. Negative result, kept
+test/                  16 files, 94 tests
 ```
+
+**The money path is a pure function on purpose.** `Store.computeUnlocked` is
+`forceLock ? false : (entitled || !canBuy)`. It was `entitled || !configured`, which failed open
+when the SDK was *unconfigured* and **not** in the state this app is actually in — keys valid, SDK
+configured, offering empty because Paid Applications is Pending User Info. In that state 32 of 47
+levels sat behind a button reading "STORE UNAVAILABLE" that did nothing: a broken game and a
+guaranteed **Guideline 3.1.1** rejection. An offering you cannot buy from is a store you cannot
+reach. **Do not re-derive this as `configured`.**
 
 **Design rule worth not re-deriving:** levels are authored as a **solved pose**, and the target
 silhouettes are derived from it. Every level is therefore solvable by construction, generation is
@@ -364,13 +459,18 @@ nearly free, and two tests assert exactly that.
 
 ## What comes next, in order
 
-| # | Work | Hours |
-|---|---|---|
-| 1 | **Corner + lighting** — real perpendicular walls, soft shadow falloff, spotlight cone, dust motes. The Shadowmatic atmosphere, procedurally. Biggest payoff per hour | ~8 |
-| 2 | **Level map + stars + next button** — chapters, three stars on *precision* not speed, progression persistence | ~6 |
-| 3 | **RevenueCat** — one-time chapter unlock, designed as an in-world transition rather than a modal | ~5 |
-| 4 | **Ship** — icon, in-app screenshots (Guideline 2.3.3, literal captures only), privacy policy, submission | ~5 |
-| 5 | **Submission craft** — demo video + per-category write-ups | ~6 |
+**Rows 1–3 and most of 4 are shipped.** Kept as a record of the estimate against the outcome:
+
+| # | Work | Est. | State |
+|---|---|---|---|
+| 1 | **Corner + lighting** — real perpendicular walls, soft shadow falloff, spotlight cone, dust motes | ~8h | ✅ done 2026-08-03 |
+| 2 | **Level map + stars** — chapters, three stars on *precision* not speed, progression persistence | ~6h | ✅ done 2026-08-03 |
+| 3 | **RevenueCat** — one-time chapter unlock | ~5h | ✅ done 2026-08-04 (`lib/store.dart`) |
+| 4 | **Ship** — icon, in-app screenshots (Guideline 2.3.3, literal captures only), privacy policy, submission | ~5h | 🟡 assets done, **submission blocked on Paid Applications** |
+| 5 | **Submission craft** — demo video + per-category write-ups | ~6h | ⬜ **the only build work left.** Devpost story is written; the video is not |
+
+Everything genuinely outstanding now lives in `▶ RESUME HERE` at the top of this file. Nothing in
+this table is a next action.
 
 > Shipaton's judging page: *"Categories must be explicitly addressed in both video and written
 > submission to be judged."* The write-ups are build work, not paperwork.
